@@ -1,0 +1,10 @@
+{
+  "name": "KATDOC",
+  "short_name": "KATDOC",
+  "description": "Historias Clínicas Veterinarias",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "background_color": "#2D2D2D",
+  "theme_color": "#E8724A",
+  "orientation": "portrait"
+}

@@ -1,0 +1,3 @@
+# VetCare Pro — Aplicación privada, no indexar
+User-agent: *
+Disallow: /
