@@ -9,6 +9,7 @@ import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { Field, Input, Textarea } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { EmptyState } from '@/components/ui/Badge';
+import { vaccinationSchema, validateSchema, type FieldErrors } from '@/lib/schemas';
 import type { Vaccination } from '@/types';
 
 type EditorState = {
@@ -47,17 +48,20 @@ export default function VaccinationsSection({ patientId }: { patientId: string }
   const [editor, setEditor] = useState<EditorState | null>(null);
   const [toDelete, setToDelete] = useState<Vaccination | null>(null);
   const [saving, setSaving] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
 
-  const openCreate = () => setEditor({ mode: 'create', data: { ...EMPTY, patient_id: patientId } });
-  const openEdit = (v: Vaccination) => setEditor({ mode: 'edit', id: v.id, data: fromVaccination(v) });
+  const openCreate = () => { setFieldErrors({}); setEditor({ mode: 'create', data: { ...EMPTY, patient_id: patientId } }); };
+  const openEdit = (v: Vaccination) => { setFieldErrors({}); setEditor({ mode: 'edit', id: v.id, data: fromVaccination(v) }); };
 
   const setField = (key: keyof VaccinationInput, value: string) => {
     setEditor(prev => prev ? { ...prev, data: { ...prev.data, [key]: value } } : prev);
+    setFieldErrors({});
   };
 
   const handleSave = async () => {
     if (!editor) return;
-    if (!editor.data.vacuna.trim()) { toast('El nombre de la vacuna es obligatorio', 'error'); return; }
+    const errors = validateSchema(vaccinationSchema, editor.data);
+    if (errors) { setFieldErrors(errors); toast('Revisa los campos marcados', 'error'); return; }
     setSaving(true);
 
     if (editor.mode === 'create') {
@@ -128,7 +132,7 @@ export default function VaccinationsSection({ patientId }: { patientId: string }
           <div className="w-full max-w-lg rounded-3xl bg-white border border-surface-200 shadow-2xl p-6 space-y-3" onClick={e => e.stopPropagation()}>
             <h3 className="text-base font-bold text-surface-800">{editor.mode === 'create' ? 'Registrar vacuna' : 'Editar vacuna'}</h3>
 
-            <Field label="Vacuna" required>
+            <Field label="Vacuna" required error={fieldErrors.vacuna}>
               <Input value={editor.data.vacuna} onChange={e => setField('vacuna', e.target.value)} placeholder="Ej: Nobivac DHPPi" />
             </Field>
             <div className="grid grid-cols-2 gap-3">

@@ -12,6 +12,7 @@ import { Field, Input, Textarea, Select } from '@/components/ui/Input';
 import { useCalendarEvents, type CalendarEvent } from '@/hooks/useCalendarEvents';
 import { usePatients } from '@/hooks/usePatients';
 import { createAppointment } from '@/hooks/useAppointments';
+import { appointmentSchema, validateSchema, type FieldErrors } from '@/lib/schemas';
 import Link from 'next/link';
 
 const WEEKDAYS = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
@@ -69,6 +70,7 @@ export default function AgendaPage() {
 
   const [showCreate, setShowCreate] = useState(false);
   const [form, setForm] = useState({ patient_id: '', hora: '', motivo: '', notas: '' });
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [saving, setSaving] = useState(false);
 
   const goToday = () => {
@@ -80,13 +82,20 @@ export default function AgendaPage() {
 
   const openCreate = (day: string) => {
     setForm({ patient_id: '', hora: '', motivo: '', notas: '' });
+    setFieldErrors({});
     setSelected(day);
     setShowCreate(true);
   };
 
+  const setFormField = (key: keyof typeof form, value: string) => {
+    setForm(f => ({ ...f, [key]: value }));
+    setFieldErrors({});
+  };
+
   const handleCreate = async () => {
     if (!selected) return;
-    if (!form.patient_id) { toast('Selecciona un paciente', 'error'); return; }
+    const errors = validateSchema(appointmentSchema, { ...form, fecha: selected });
+    if (errors) { setFieldErrors(errors); toast('Revisa los campos marcados', 'error'); return; }
     const patient = patients.find(p => p.id === form.patient_id);
     setSaving(true);
     const { error } = await createAppointment({
@@ -224,23 +233,23 @@ export default function AgendaPage() {
             <h3 className="text-base font-bold text-surface-800">Agendar cita</h3>
             <p className="text-xs text-surface-400">📅 {selected ? new Date(selected + 'T12:00:00').toLocaleDateString('es-VE', { weekday: 'long', day: 'numeric', month: 'long' }) : ''}</p>
 
-            <Field label="Paciente" required>
+            <Field label="Paciente" required error={fieldErrors.patient_id}>
               <Select
                 value={form.patient_id}
-                onChange={e => setForm(f => ({ ...f, patient_id: e.target.value }))}
+                onChange={e => setFormField('patient_id', e.target.value)}
                 options={[{ value: '', label: 'Seleccionar paciente...' }, ...patients.map(p => ({ value: p.id, label: `${p.nombre}${p.tutor ? ` (${p.tutor.nombre})` : ''}` }))]}
               />
             </Field>
             <div className="grid grid-cols-2 gap-3">
-              <Field label="Hora">
-                <Input type="time" value={form.hora} onChange={e => setForm(f => ({ ...f, hora: e.target.value }))} />
+              <Field label="Hora" error={fieldErrors.hora}>
+                <Input type="time" value={form.hora} onChange={e => setFormField('hora', e.target.value)} />
               </Field>
               <Field label="Motivo">
-                <Input value={form.motivo} onChange={e => setForm(f => ({ ...f, motivo: e.target.value }))} placeholder="Ej: Consulta" />
+                <Input value={form.motivo} onChange={e => setFormField('motivo', e.target.value)} placeholder="Ej: Consulta" />
               </Field>
             </div>
             <Field label="Notas">
-              <Textarea rows={2} value={form.notas} onChange={e => setForm(f => ({ ...f, notas: e.target.value }))} placeholder="Notas opcionales" />
+              <Textarea rows={2} value={form.notas} onChange={e => setFormField('notas', e.target.value)} placeholder="Notas opcionales" />
             </Field>
 
             <div className="flex gap-2 pt-2">

@@ -9,6 +9,7 @@ import { useState } from 'react';
 import { supabase, uploadPetPhoto } from '@/lib/supabase';
 import { createPatientWithTutor, updatePatient } from '@/hooks/usePatients';
 import { ESPECIES } from '@/types';
+import { patientFormSchema, validateSchema, type FieldErrors } from '@/lib/schemas';
 import { Button } from '@/components/ui/Button';
 import { Field, Input, Select } from '@/components/ui/Input';
 import { ErrorMessage, SuccessMessage } from '@/components/ui/Badge';
@@ -50,9 +51,10 @@ export default function PatientForm({ existingPatient, prefillTutor, onSuccess }
   const [saving, setSaving]   = useState(false);
   const [error, setError]     = useState('');
   const [success, setSuccess] = useState('');
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
 
-  const setT = (key: keyof typeof tutor, val: string) => setTutor(prev => ({ ...prev, [key]: val }));
-  const setP = (key: keyof typeof patient, val: string) => setPatient(prev => ({ ...prev, [key]: val }));
+  const setT = (key: keyof typeof tutor, val: string) => { setTutor(prev => ({ ...prev, [key]: val })); setFieldErrors({}); };
+  const setP = (key: keyof typeof patient, val: string) => { setPatient(prev => ({ ...prev, [key]: val })); setFieldErrors({}); };
 
   // ── Foto: preview inmediato + subida inmediata si es edición ──
   const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -80,10 +82,14 @@ export default function PatientForm({ existingPatient, prefillTutor, onSuccess }
   };
 
   const validate = (): boolean => {
-    if (!tutor.nombre.trim())   { setError('El nombre del tutor es obligatorio.'); return false; }
-    if (!tutor.cedula.trim())   { setError('La cédula del tutor es obligatoria.');  return false; }
-    if (!patient.nombre.trim()) { setError('El nombre del paciente es obligatorio.'); return false; }
-    if (!patient.especie)       { setError('La especie es obligatoria.'); return false; }
+    const errors = validateSchema(patientFormSchema, { tutor, patient });
+    if (errors) {
+      setFieldErrors(errors);
+      const first = Object.values(errors)[0];
+      if (first) setError(first);
+      return false;
+    }
+    setFieldErrors({});
     return true;
   };
 
@@ -182,23 +188,23 @@ export default function PatientForm({ existingPatient, prefillTutor, onSuccess }
       )}
 
       <div className="grid grid-cols-1 gap-3">
-        <Field label="Nombre completo" required>
+        <Field label="Nombre completo" required error={fieldErrors['tutor.nombre']}>
           <Input value={tutor.nombre} onChange={e => setT('nombre', e.target.value)} placeholder="Ej: María González" />
         </Field>
         <div className="grid grid-cols-2 gap-3">
-          <Field label="Cédula / DNI" required>
+          <Field label="Cédula / DNI" required error={fieldErrors['tutor.cedula']}>
             <Input value={tutor.cedula} onChange={e => setT('cedula', e.target.value)}
               placeholder="V-12345678" inputMode="numeric"
               disabled={tutorLocked} />
           </Field>
-          <Field label="Teléfono">
+          <Field label="Teléfono" error={fieldErrors['tutor.telefono']}>
             <Input value={tutor.telefono} onChange={e => setT('telefono', e.target.value)} placeholder="0412-000-0000" type="tel" />
           </Field>
         </div>
-        <Field label="Email">
+        <Field label="Email" error={fieldErrors['tutor.email']}>
           <Input value={tutor.email} onChange={e => setT('email', e.target.value)} placeholder="correo@ejemplo.com" type="email" />
         </Field>
-        <Field label="Dirección">
+        <Field label="Dirección" error={fieldErrors['tutor.direccion']}>
           <Input value={tutor.direccion} onChange={e => setT('direccion', e.target.value)} placeholder="Urb. Las Palmas, Calle 5..." />
         </Field>
       </div>
@@ -206,28 +212,28 @@ export default function PatientForm({ existingPatient, prefillTutor, onSuccess }
       {/* ── Datos del Paciente ── */}
       <SectionHeader title="🐾 Datos del Paciente" />
       <div className="grid grid-cols-1 gap-3">
-        <Field label="Nombre de la mascota" required>
+        <Field label="Nombre de la mascota" required error={fieldErrors['patient.nombre']}>
           <Input value={patient.nombre} onChange={e => setP('nombre', e.target.value)} placeholder="Ej: Milo, Luna, Rocky..." />
         </Field>
         <div className="grid grid-cols-2 gap-3">
-          <Field label="Especie" required>
+          <Field label="Especie" required error={fieldErrors['patient.especie']}>
             <Select value={patient.especie} onChange={e => setP('especie', e.target.value)}
               options={[{ value: '', label: 'Seleccionar...' }, ...ESPECIES.map(e => ({ value: e, label: e }))]} />
           </Field>
-          <Field label="Raza">
+          <Field label="Raza" error={fieldErrors['patient.raza']}>
             <Input value={patient.raza} onChange={e => setP('raza', e.target.value)} placeholder="Ej: Labrador..." />
           </Field>
         </div>
         <div className="grid grid-cols-2 gap-3">
-          <Field label="Sexo">
+          <Field label="Sexo" error={fieldErrors['patient.sexo']}>
             <Select value={patient.sexo} onChange={e => setP('sexo', e.target.value)}
               options={[{ value: '', label: 'Seleccionar...' }, { value: 'Macho', label: 'Macho' }, { value: 'Hembra', label: 'Hembra' }]} />
           </Field>
-          <Field label="Color / Pelaje">
+          <Field label="Color / Pelaje" error={fieldErrors['patient.color']}>
             <Input value={patient.color} onChange={e => setP('color', e.target.value)} placeholder="Ej: Marrón" />
           </Field>
         </div>
-        <Field label="Fecha de nacimiento">
+        <Field label="Fecha de nacimiento" error={fieldErrors['patient.fecha_nacimiento']}>
           <Input type="date" value={patient.fecha_nacimiento} onChange={e => setP('fecha_nacimiento', e.target.value)} />
         </Field>
       </div>

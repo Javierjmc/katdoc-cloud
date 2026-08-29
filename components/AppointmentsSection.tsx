@@ -9,6 +9,7 @@ import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { Field, Input, Textarea, Select } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { EmptyState } from '@/components/ui/Badge';
+import { appointmentSchema, validateSchema, type FieldErrors } from '@/lib/schemas';
 import { APPOINTMENT_STATES, type Appointment, type AppointmentState } from '@/types';
 
 type EditorState = {
@@ -60,21 +61,24 @@ export default function AppointmentsSection({ patientId, tutorId }: { patientId:
   const [editor, setEditor] = useState<EditorState | null>(null);
   const [toDelete, setToDelete] = useState<Appointment | null>(null);
   const [saving, setSaving] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
 
-  const openCreate = () => setEditor({ mode: 'create', data: { ...EMPTY, patient_id: patientId, tutor_id: tutorId } });
-  const openEdit = (a: Appointment) => setEditor({ mode: 'edit', id: a.id, data: fromAppointment(a) });
+  const openCreate = () => { setFieldErrors({}); setEditor({ mode: 'create', data: { ...EMPTY, patient_id: patientId, tutor_id: tutorId } }); };
+  const openEdit = (a: Appointment) => { setFieldErrors({}); setEditor({ mode: 'edit', id: a.id, data: fromAppointment(a) }); };
 
   const setField = (key: keyof AppointmentInput, value: string) => {
     setEditor(prev => prev ? { ...prev, data: { ...prev.data, [key]: value } } : prev);
+    setFieldErrors({});
   };
 
   const handleSave = async () => {
     if (!editor) return;
-    if (!editor.data.fecha) { toast('La fecha es obligatoria', 'error'); return; }
+    const errors = validateSchema(appointmentSchema, editor.data);
+    if (errors) { setFieldErrors(errors); toast('Revisa los campos marcados', 'error'); return; }
     setSaving(true);
 
     if (editor.mode === 'create') {
-      const { id, error } = await createAppointment(editor.data);
+      const { error } = await createAppointment(editor.data);
       if (error) toast(`Error al guardar: ${error}`, 'error');
       else { toast('Cita agendada', 'success'); setEditor(null); refetch(); }
     } else if (editor.id) {
@@ -145,10 +149,10 @@ export default function AppointmentsSection({ patientId, tutorId }: { patientId:
             <h3 className="text-base font-bold text-surface-800">{editor.mode === 'create' ? 'Agendar cita' : 'Editar cita'}</h3>
 
             <div className="grid grid-cols-2 gap-3">
-              <Field label="Fecha" required>
+              <Field label="Fecha" required error={fieldErrors.fecha}>
                 <Input type="date" value={editor.data.fecha} onChange={e => setField('fecha', e.target.value)} />
               </Field>
-              <Field label="Hora">
+              <Field label="Hora" error={fieldErrors.hora}>
                 <Input type="time" value={editor.data.hora ?? ''} onChange={e => setField('hora', e.target.value)} />
               </Field>
             </div>
