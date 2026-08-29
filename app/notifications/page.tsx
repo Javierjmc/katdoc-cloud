@@ -10,6 +10,7 @@ import { PageLoader, EmptyState } from '@/components/ui/Badge';
 import { useReminders, updateReminderEstado, runScanNow } from '@/hooks/useReminders';
 import { buildWhatsAppLink, buildMensajeRecordatorio, buildEmailRecordatorio } from '@/lib/notifications/messages';
 import { logNotification } from '@/lib/notifications/log';
+import { appPinHeader } from '@/lib/api-auth';
 import type { Reminder } from '@/types';
 
 type Tab = 'pendientes' | 'seguimiento';
@@ -87,7 +88,7 @@ export default function NotificationsPage() {
     setBusyId(r.id);
     const res = await fetch('/api/notifications/email', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...appPinHeader() },
       body: JSON.stringify({ to: email, subject, body, html, reminderId: r.id }),
     });
     const json = (await res.json()) as { ok?: boolean; simulated?: boolean; error?: string };

@@ -4,6 +4,7 @@
 // ============================================================
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
+import { appPinHeader } from '@/lib/api-auth';
 import type { Reminder } from '@/types';
 
 // ─── Hook: recordatorios por estado ─────────────────────────
@@ -61,7 +62,7 @@ export async function updateReminderEstado(
 /** Ejecuta el scan on-demand desde el cliente y devuelve el resultado. */
 export async function runScanNow(): Promise<{ creados: number; existentes: number; error?: string }> {
   try {
-    const res = await fetch('/api/reminders/scan', { method: 'POST' });
+    const res = await fetch('/api/reminders/scan', { method: 'POST', headers: appPinHeader() });
     const json = await res.json();
     if (!res.ok) return { creados: 0, existentes: 0, error: json.error ?? 'Error al escanear' };
     return { creados: json.creados ?? 0, existentes: json.existentes ?? 0 };

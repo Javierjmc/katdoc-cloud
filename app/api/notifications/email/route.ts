@@ -7,11 +7,16 @@
 
 import { NextResponse } from 'next/server';
 import { getProvider } from '@/lib/notifications';
+import { isAuthorized } from '@/lib/api-auth';
 
 export const runtime = 'nodejs';
 
 export async function POST(request: Request) {
   try {
+    if (!isAuthorized(request)) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+    }
+
     const body = (await request.json()) as { to: string; subject?: string; body?: string; html?: string; reminderId?: string };
     if (!body.to || !body.body) {
       return NextResponse.json({ error: 'Faltan destinatario o contenido' }, { status: 400 });

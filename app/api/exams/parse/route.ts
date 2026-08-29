@@ -6,6 +6,7 @@
 
 import { NextResponse } from 'next/server';
 import { parseExamWithGemini } from '@/lib/gemini';
+import { isAuthorized } from '@/lib/api-auth';
 
 const MAX_SIZE = 10 * 1024 * 1024; // 10 MB
 
@@ -13,6 +14,10 @@ export const runtime = 'nodejs';
 
 export async function POST(request: Request) {
   try {
+    if (!isAuthorized(request)) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+    }
+
     const formData = await request.formData();
     const file = formData.get('file');
 

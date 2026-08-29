@@ -18,6 +18,7 @@ import { Field, Input, Textarea, Select } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { EmptyState } from '@/components/ui/Badge';
 import { ALLOWED_IMAGE_TYPES, ALLOWED_DOC_TYPES, MAX_DOCUMENT_SIZE } from '@/lib/constants';
+import { appPinHeader } from '@/lib/api-auth';
 import type { LabAnalyte, LaboratoryExam } from '@/types';
 
 type EditorState = {
@@ -85,7 +86,7 @@ export default function LabExamsSection({ patientId }: { patientId: string }) {
       const formData = new FormData();
       formData.append('file', editor.file);
 
-      const res = await fetch('/api/exams/parse', { method: 'POST', body: formData });
+      const res = await fetch('/api/exams/parse', { method: 'POST', headers: appPinHeader(), body: formData });
       const json = (await res.json()) as
         | { nombre_examen: string; laboratorio_origen: string | null; fecha_examen: string | null; analitos: LabAnalyte[] }
         | { error: string };
