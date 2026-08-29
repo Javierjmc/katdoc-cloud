@@ -7,6 +7,7 @@ import AppShell from '@/components/AppShell';
 import { useToast } from '@/components/ui/Toast';
 import { Button } from '@/components/ui/Button';
 import { PageLoader } from '@/components/ui/Badge';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { NOTIFICATION_TYPES, WINDOW_PRESETS } from '@/lib/constants';
 import {
   useNotificationConfig,
@@ -24,6 +25,8 @@ export default function ConfigPage() {
   const [newTipo, setNewTipo] = useState(NOTIFICATION_TYPES[0].tipo);
   const [newLabel, setNewLabel] = useState('');
   const [newDias, setNewDias] = useState(21);
+  const [toDelete, setToDelete] = useState<NotificationConfig | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const patch = async (id: string, data: Parameters<typeof updateNotificationConfig>[1]) => {
     setSavingId(id);
@@ -40,11 +43,13 @@ export default function ConfigPage() {
     else { toast('Tipo agregado', 'success'); setShowNew(false); refetch(); }
   };
 
-  const handleDelete = async (c: NotificationConfig) => {
-    if (!confirm(`¿Eliminar la configuración "${c.label}"?`)) return;
-    const { error } = await deleteNotificationConfig(c.id);
+  const handleDelete = async () => {
+    if (!toDelete) return;
+    setDeleting(true);
+    const { error } = await deleteNotificationConfig(toDelete.id);
+    setDeleting(false);
     if (error) toast(`Error: ${error}`, 'error');
-    else { toast('Configuración eliminada', 'success'); refetch(); }
+    else { toast('Configuración eliminada', 'success'); setToDelete(null); refetch(); }
   };
 
   if (loading) return <PageLoader />;
@@ -120,7 +125,7 @@ export default function ConfigPage() {
                 </button>
 
                 <button
-                  onClick={() => handleDelete(c)}
+                  onClick={() => setToDelete(c)}
                   className="w-8 h-8 rounded-lg bg-red-50 hover:bg-red-100 text-red-500 text-xs"
                   aria-label="Eliminar"
                 >
@@ -159,6 +164,17 @@ export default function ConfigPage() {
           )}
         </div>
       </div>
+
+      <ConfirmDialog
+        open={!!toDelete}
+        title="Eliminar configuración"
+        message={`¿Eliminar la configuración "${toDelete?.label ?? ''}"? Esta acción no se puede deshacer.`}
+        confirmLabel="Eliminar"
+        danger
+        loading={deleting}
+        onConfirm={handleDelete}
+        onCancel={() => setToDelete(null)}
+      />
     </AppShell>
   );
 }

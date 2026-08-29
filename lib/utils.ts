@@ -120,6 +120,6 @@ export function sistemaBadgeStyle(status: string): SistemaBadgeStyle {
     case 'AN':
       return { label: 'Anormal', className: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300' };
     default:
-      return { label: 'No examinado', className: 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400' };
+      return { label: 'No examinado', className: 'bg-surface-100 text-surface-500 dark:bg-surface-800 dark:text-surface-400' };
   }
 }
