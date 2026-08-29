@@ -251,7 +251,10 @@ ALTER TABLE patients ADD COLUMN IF NOT EXISTS active BOOLEAN NOT NULL DEFAULT TR
 CREATE INDEX IF NOT EXISTS idx_patients_active ON patients (active);
 
 -- Exponer `active` en la vista del dashboard para filtrar activos
-CREATE OR REPLACE VIEW dashboard_search AS
+-- NOTA: CREATE OR REPLACE VIEW no permite insertar columnas en el medio,
+-- por eso primero se elimina la vista (y luego se recrea completa).
+DROP VIEW IF EXISTS dashboard_search;
+CREATE VIEW dashboard_search AS
 SELECT
   p.id            AS patient_id,
   p.nombre        AS patient_nombre,
