@@ -2,7 +2,7 @@
 // components/ui/Toast.tsx
 // Sistema de notificaciones Toast ligero, sin dependencias externas
 
-import { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import { createContext, useContext, useState, useCallback } from 'react';
 
 type ToastType = 'success' | 'error' | 'info';
 
@@ -49,9 +49,9 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
 // ─── Item individual ─────────────────────────────────────────
 function ToastItem({ toast: t }: { toast: Toast }) {
   const colorMap: Record<ToastType, string> = {
-    success: 'bg-teal-600 text-white',
+    success: 'bg-green-600 text-white',
     error:   'bg-red-600 text-white',
-    info:    'bg-slate-800 dark:bg-slate-700 text-white',
+    info:    'bg-surface-800 dark:bg-surface-700 text-white',
   };
   const iconMap: Record<ToastType, string> = {
     success: '✅', error: '❌', info: 'ℹ️',

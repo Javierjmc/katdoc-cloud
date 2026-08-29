@@ -69,3 +69,58 @@ export async function uploadMedicalDocument(
 
   return data.publicUrl;
 }
+
+/**
+ * Sube un archivo (PDF/imagen) de un examen de laboratorio al bucket
+ * `lab-exams` y devuelve la URL pública.
+ */
+export async function uploadLabExamFile(
+  file: File,
+  examId: string
+): Promise<string | null> {
+  const ext = (file.name.split('.').pop() || 'bin').toLowerCase();
+  const filePath = `${examId}/archivo.${ext}`;
+
+  const { error } = await supabase.storage
+    .from('lab-exams')
+    .upload(filePath, file, { upsert: true });
+
+  if (error) {
+    console.error('Error subiendo examen:', error.message);
+    return null;
+  }
+
+  const { data } = supabase.storage
+    .from('lab-exams')
+    .getPublicUrl(filePath);
+
+  return data.publicUrl;
+}
+
+/**
+ * Sube una imagen de ecografía al bucket `ecografias`.
+ * @param index Índice de la imagen dentro del estudio (para rutas únicas).
+ */
+export async function uploadEcografiaImage(
+  file: File,
+  ecografiaId: string,
+  index: number
+): Promise<string | null> {
+  const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
+  const filePath = `${ecografiaId}/${index}.${ext}`;
+
+  const { error } = await supabase.storage
+    .from('ecografias')
+    .upload(filePath, file, { upsert: true });
+
+  if (error) {
+    console.error('Error subiendo ecografía:', error.message);
+    return null;
+  }
+
+  const { data } = supabase.storage
+    .from('ecografias')
+    .getPublicUrl(filePath);
+
+  return data.publicUrl;
+}

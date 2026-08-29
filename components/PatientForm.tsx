@@ -111,7 +111,10 @@ export default function PatientForm({ existingPatient, prefillTutor, onSuccess }
         }
       } else {
         // Crear tutor + paciente
-        const { patientId: newId, error: createErr } = await createPatientWithTutor({ tutor, patient });
+        const { patientId: newId, error: createErr } = await createPatientWithTutor(
+          { tutor, patient },
+          { tutorId: prefillTutor?.id }
+        );
         if (createErr || !newId) throw new Error(createErr ?? 'Error desconocido');
         patientId = newId;
 

@@ -4,11 +4,11 @@ import { type InputHTMLAttributes, type TextareaHTMLAttributes, forwardRef } fro
 
 const baseClass = `
   w-full px-3 py-2.5 rounded-xl text-sm
-  bg-slate-50 dark:bg-slate-800
-  text-slate-800 dark:text-white
-  placeholder:text-slate-400 dark:placeholder:text-slate-500
-  border border-slate-200 dark:border-slate-700
-  focus:outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-400/20
+  bg-surface-50 dark:bg-surface-800
+  text-surface-800 dark:text-white
+  placeholder:text-surface-400 dark:placeholder:text-surface-500
+  border border-surface-200 dark:border-surface-700
+  focus:outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-400/20
   disabled:opacity-50 disabled:cursor-not-allowed
   transition-all
 `;
@@ -20,20 +20,21 @@ interface FieldProps {
   hint?:     string;
   children:  React.ReactNode;
   required?: boolean;
+  className?: string;
 }
 
-export function Field({ label, error, hint, required, children }: FieldProps) {
+export function Field({ label, error, hint, required, children, className }: FieldProps) {
   return (
-    <div className="flex flex-col gap-1">
+    <div className={`flex flex-col gap-1 ${className ?? ''}`}>
       {label && (
-        <label className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+        <label className="text-xs font-semibold uppercase tracking-wide text-surface-500 dark:text-surface-400">
           {label}
           {required && <span className="text-red-400 ml-0.5">*</span>}
         </label>
       )}
       {children}
       {error && <p className="text-xs text-red-500">{error}</p>}
-      {hint && !error && <p className="text-xs text-slate-400">{hint}</p>}
+      {hint && !error && <p className="text-xs text-surface-400">{hint}</p>}
     </div>
   );
 }

@@ -10,13 +10,6 @@ interface AppShellProps {
   children: React.ReactNode;
 }
 
-const NAV_ITEMS = [
-  { href: '/dashboard',     icon: '🏠', label: 'Inicio',    match: '/dashboard' },
-  { href: '/tutors',        icon: '👥', label: 'Tutores',   match: '/tutors' },
-  { href: '/patients',      icon: '🐾', label: 'Pacientes', match: '/patients' },
-  { href: '/patients/new',  icon: '➕', label: 'Nuevo',     match: '/patients/new' },
-];
-
 export default function AppShell({ children }: AppShellProps) {
   const pathname  = usePathname();
   const router    = useRouter();
@@ -53,6 +46,8 @@ export default function AppShell({ children }: AppShellProps) {
           <SidebarLink href="/dashboard"    icon="🏠" label="Dashboard"  active={pathname === '/dashboard'} />
           <SidebarLink href="/tutors"       icon="👥" label="Tutores"    active={pathname.startsWith('/tutors')} />
           <SidebarLink href="/patients"     icon="🐾" label="Pacientes"  active={pathname.startsWith('/patients') && !pathname.includes('/new')} />
+          <SidebarLink href="/notifications" icon="🔔" label="Avisos"    active={pathname.startsWith('/notifications')} />
+          <SidebarLink href="/config"       icon="⚙️" label="Ajustes"    active={pathname.startsWith('/config')} />
           <div className="pt-3 border-t border-surface-600 mt-3">
             <SidebarLink href="/patients/new" icon="➕" label="Nuevo Paciente" active={false} highlight />
           </div>
@@ -98,6 +93,8 @@ export default function AppShell({ children }: AppShellProps) {
           <SidebarLink href="/dashboard"    icon="🏠" label="Dashboard"       active={pathname === '/dashboard'}                                    collapsed={!sidebarOpen} />
           <SidebarLink href="/tutors"       icon="👥" label="Tutores"         active={pathname.startsWith('/tutors')}                               collapsed={!sidebarOpen} />
           <SidebarLink href="/patients"     icon="🐾" label="Pacientes"       active={pathname.startsWith('/patients') && !pathname.includes('new')} collapsed={!sidebarOpen} />
+          <SidebarLink href="/notifications" icon="🔔" label="Avisos"         active={pathname.startsWith('/notifications')}                         collapsed={!sidebarOpen} />
+          <SidebarLink href="/config"       icon="⚙️" label="Ajustes"         active={pathname.startsWith('/config')}                               collapsed={!sidebarOpen} />
           <SidebarLink href="/patients/new" icon="➕" label="Nuevo Paciente"  active={false} highlight                                              collapsed={!sidebarOpen} />
         </nav>
 
@@ -133,6 +130,7 @@ export default function AppShell({ children }: AppShellProps) {
         <MobileNavItem href="/dashboard"    icon="🏠" label="Inicio"    active={pathname === '/dashboard'} />
         <MobileNavItem href="/tutors"       icon="👥" label="Tutores"   active={pathname.startsWith('/tutors')} />
         <MobileNavItem href="/patients"     icon="🐾" label="Pacientes" active={pathname.startsWith('/patients') && !pathname.includes('new')} />
+        <MobileNavItem href="/notifications" icon="🔔" label="Avisos"   active={pathname.startsWith('/notifications')} />
         <MobileNavItem href="/patients/new" icon="➕" label="Nuevo"     active={false} highlight />
       </nav>
     </div>

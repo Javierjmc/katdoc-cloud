@@ -32,6 +32,7 @@ function NewRecordContent() {
         <MedicalRecordForm
           patientId={patientId}
           existingRecord={{ numero_historia: nextNumber }}
+          sexo={patient?.sexo}
           onSuccess={(record) => router.push(`/records/${record.id}`)}
         />
       </div>

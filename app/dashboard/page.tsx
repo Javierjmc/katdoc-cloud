@@ -8,13 +8,14 @@ import AppShell from '@/components/AppShell';
 import type { DashboardRow } from '@/types';
 import { ESPECIES } from '@/types';
 import { useDebounce } from '@/hooks/useDebounce';
+import { useLocalStorage } from '@/hooks/useLocalStorage';
 
 export default function DashboardPage() {
   const router = useRouter();
   const [rows, setRows]       = useState<DashboardRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch]   = useState('');
-  const [filterEspecie, setFilterEspecie] = useState('');
+  const [filterEspecie, setFilterEspecie] = useLocalStorage('dashboard_especie', '');
   const debouncedSearch = useDebounce(search, 250);
 
   useEffect(() => {
@@ -23,7 +24,7 @@ export default function DashboardPage() {
   }, [router]);
 
   useEffect(() => {
-    supabase.from('dashboard_search').select('*').order('fecha_consulta', { ascending: false })
+    supabase.from('dashboard_search').select('*').eq('active', true).order('fecha_consulta', { ascending: false })
       .then(({ data }) => { setRows((data ?? []) as DashboardRow[]); setLoading(false); });
   }, []);
 

@@ -26,6 +26,7 @@ export type Patient = {
   color?: string;
   sexo?: string;
   photo_url?: string;
+  active?: boolean;
   created_at: string;
   // Relación expandida
   tutor?: Tutor;
@@ -33,6 +34,9 @@ export type Patient = {
 
 // Valores posibles para el status de cada sistema
 export type SistemaStatus = 'N' | 'AN' | 'NE';
+
+// Nota de descargo por sistema: { [key]: 'texto de descargo' }
+export type SistemasNotasMap = Partial<Record<keyof SistemasStatusMap, string>>;
 
 // JSONB: estado de los 12 sistemas clínicos
 export type SistemasStatusMap = {
@@ -49,6 +53,112 @@ export type SistemasStatusMap = {
   cardiovascular?: SistemaStatus;
   genitourinario?: SistemaStatus;
   // Añade nuevas claves aquí sin tocar el SQL
+};
+
+export type Vaccination = {
+  id: string;
+  patient_id: string;
+  record_id?: string;
+  vacuna: string;
+  fecha_aplicacion?: string;
+  fecha_proxima_dosis?: string;
+  marca?: string;
+  lote?: string;
+  dosis?: string;
+  observaciones?: string;
+  created_at: string;
+};
+
+export type LabAnalyte = {
+  nombre: string;
+  valor: string;
+  unidad?: string;
+  rango?: string;
+  flag?: 'N' | 'ALTO' | 'BAJO';
+};
+
+export type LaboratoryExam = {
+  id: string;
+  patient_id: string;
+  record_id?: string;
+  nombre_examen: string;
+  laboratorio_origen?: string;
+  fecha_examen?: string;
+  fecha_proximo_control?: string;
+  analitos: LabAnalyte[];
+  notas?: string;
+  file_url?: string;
+  file_type?: string;
+  created_at: string;
+};
+
+export type PrescriptionMedication = {
+  nombre: string;
+  presentacion?: string;
+  dosis?: string;
+  frecuencia?: string;
+  duracion?: string;
+  via?: string;
+  indicaciones?: string;
+};
+
+export type Prescription = {
+  id: string;
+  patient_id: string;
+  record_id?: string;
+  titulo?: string;
+  fecha?: string;
+  medicamentos: PrescriptionMedication[];
+  notas?: string;
+  created_at: string;
+};
+
+export type EcografiaMedicion = {
+  nombre: string;
+  valor: string;
+  unidad?: string;
+};
+
+export type Ecografia = {
+  id: string;
+  patient_id: string;
+  record_id?: string;
+  fecha?: string;
+  organo?: string;
+  hallazgos?: string;
+  conclusiones?: string;
+  mediciones: EcografiaMedicion[];
+  imagenes: string[];
+  created_at: string;
+};
+
+export type NotificationConfig = {
+  id: string;
+  tipo: string;
+  label: string;
+  dias_antes: number;
+  dias_despues: number;
+  enabled: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+export type Reminder = {
+  id: string;
+  patient_id: string;
+  tutor_id?: string;
+  tipo: string;
+  titulo: string;
+  descripcion?: string;
+  fecha_evento: string;
+  fecha_ventana: string;
+  estado: 'pendiente' | 'enviado' | 'descartado';
+  canal?: string;
+  fecha_envio?: string;
+  created_at: string;
+  // Relación expandida
+  patient?: { id: string; nombre: string; active?: boolean };
+  tutor?: { id: string; nombre: string; telefono?: string; email?: string };
 };
 
 export type MedicalRecord = {
@@ -79,6 +189,7 @@ export type MedicalRecord = {
   actitud_temperamento?: string;
   // Sistemas
   sistemas_status?: SistemasStatusMap;
+  sistemas_notas?: SistemasNotasMap;
   descripcion_hallazgos?: string;
   // Adjuntos
   document_url?: string;
@@ -119,13 +230,35 @@ export const SISTEMAS_CONFIG: SistemaConfig[] = [
 export const ACTITUD_OPTIONS = [
   'Alerta',
   'Letárgico',
-  'Estuporoso',
   'Comatoso',
   'Hiperactivo',
   'Agresivo',
   'Ansioso',
   'Otro',
 ] as const;
+
+// ─── Opciones del Examen Clínico ──────────────────────────────
+// El valor marcado con (*) es el que se pre-selecciona en registros nuevos.
+
+export const PULSO_OPTIONS = ['Fuerte', 'Regular'] as const;
+export const PULSO_DEFAULT = 'Fuerte';
+
+export const GANGLIOS_OPTIONS = ['Reactivos', 'No reactivos', 'No palpable'] as const;
+export const GANGLIOS_DEFAULT = 'No reactivos';
+
+export const MUCOSAS_OPTIONS = [
+  'Rosadas y húmedas',
+  'Rosadas y secas',
+  'Cianóticas',
+  'Ictéricas',
+  'Pálidas y húmedas',
+  'Pálidas y secas',
+] as const;
+export const MUCOSAS_DEFAULT = 'Rosadas y húmedas';
+
+export type PulsoOption     = typeof PULSO_OPTIONS[number];
+export type GangliosOption  = typeof GANGLIOS_OPTIONS[number];
+export type MucosasOption   = typeof MUCOSAS_OPTIONS[number];
 
 // Especies disponibles
 export const ESPECIES = ['Canino', 'Felino', 'Exótico', 'Bovino', 'Equino', 'Otro'] as const;
@@ -138,6 +271,7 @@ export type DashboardRow = {
   especie: string;
   raza?: string;
   photo_url?: string;
+  active?: boolean;
   tutor_id: string;
   tutor_nombre: string;
   tutor_cedula: string;

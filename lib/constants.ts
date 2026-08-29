@@ -39,3 +39,14 @@ export const ROUTES = {
   newRecord:     (patientId: string) => `/records/new?patientId=${patientId}`,
   record:        (id: string) => `/records/${id}`,
 } as const;
+
+// Tipos de eventos que generan recordatorios (S13)
+export const NOTIFICATION_TYPES: { tipo: string; label: string; descripcion: string }[] = [
+  { tipo: 'vacuna',          label: 'Vacunación',              descripcion: 'Próxima dosis de vacuna' },
+  { tipo: 'desparasitacion', label: 'Desparasitación',         descripcion: 'Próxima desparasitación' },
+  { tipo: 'examen',          label: 'Exámenes de laboratorio', descripcion: 'Próximo control de exámenes' },
+  { tipo: 'control',         label: 'Controles',               descripcion: 'Controles generales' },
+];
+
+// Presets rápidos de ventana en días (editable por el usuario)
+export const WINDOW_PRESETS = [7, 21, 30, 45, 60, 90];

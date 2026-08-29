@@ -1,17 +1,27 @@
 'use client';
 import { useParams } from 'next/navigation';
+import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { usePatient } from '@/hooks/usePatients';
+import { usePatient, updatePatient } from '@/hooks/usePatients';
 import { useMedicalRecords } from '@/hooks/useMedicalRecords';
 import AppShell from '@/components/AppShell';
 import { PageLoader, EmptyState } from '@/components/ui/Badge';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { useToast } from '@/components/ui/Toast';
+import VaccinationsSection from '@/components/VaccinationsSection';
+import LabExamsSection from '@/components/LabExamsSection';
+import PrescriptionsSection from '@/components/PrescriptionsSection';
+import EcografiasSection from '@/components/EcografiasSection';
 import { calcularEdad } from '@/lib/utils';
 
 export default function PatientProfilePage() {
   const { id } = useParams<{ id: string }>();
-  const { patient, loading: pLoading } = usePatient(id);
+  const { patient, loading: pLoading, refetch } = usePatient(id);
   const { records, loading: rLoading } = useMedicalRecords(id);
+  const { toast } = useToast();
+  const [confirmToggle, setConfirmToggle] = useState(false);
+  const [toggling, setToggling] = useState(false);
 
   if (pLoading) return <PageLoader />;
   if (!patient) return (
@@ -19,6 +29,21 @@ export default function PatientProfilePage() {
       <EmptyState icon="🔍" title="Paciente no encontrado" />
     </AppShell>
   );
+
+  const isActive = patient.active ?? true;
+
+  const handleToggleActive = async () => {
+    setToggling(true);
+    const { error } = await updatePatient(patient.id, { active: !isActive });
+    setToggling(false);
+    setConfirmToggle(false);
+    if (error) {
+      toast(`Error al actualizar el estado: ${error}`, 'error');
+    } else {
+      toast(isActive ? 'Paciente desactivado' : 'Paciente activado', 'success');
+      refetch();
+    }
+  };
 
   const emoji: Record<string, string> = { Canino:'🐶', Felino:'🐱', Exótico:'🦜', Bovino:'🐄', Equino:'🐴', Otro:'🐾' };
 
@@ -33,10 +58,16 @@ export default function PatientProfilePage() {
             <p className="text-xs text-surface-400">{patient.especie} · {patient.raza ?? 'Sin raza'}</p>
           </div>
         </div>
-        <Link href={`/records/new?patientId=${id}`}
-          className="px-4 py-2 rounded-xl bg-brand-500 hover:bg-brand-600 text-white text-sm font-bold transition-colors shadow-md shadow-brand-500/20">
-          + Consulta
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link href={`/patients/${id}/reporte`}
+            className="px-4 py-2 rounded-xl bg-surface-100 hover:bg-surface-200 text-surface-600 text-sm font-bold transition-colors">
+            🖨 Reporte
+          </Link>
+          <Link href={`/records/new?patientId=${id}`}
+            className="px-4 py-2 rounded-xl bg-brand-500 hover:bg-brand-600 text-white text-sm font-bold transition-colors shadow-md shadow-brand-500/20">
+            + Consulta
+          </Link>
+        </div>
       </header>
 
       <div className="px-4 lg:px-8 py-6 max-w-5xl mx-auto">
@@ -58,6 +89,7 @@ export default function PatientProfilePage() {
                   <Chip label={patient.especie} color="brand" />
                   {patient.sexo && <Chip label={patient.sexo} color="slate" />}
                   {patient.color && <Chip label={patient.color} color="slate" />}
+                  <Chip label={isActive ? 'Activo' : 'Inactivo'} color={isActive ? 'brand' : 'slate'} />
                 </div>
                 {patient.fecha_nacimiento && (
                   <p className="text-sm text-surface-500 mt-3">📅 {calcularEdad(patient.fecha_nacimiento)}</p>
@@ -66,8 +98,31 @@ export default function PatientProfilePage() {
                   className="mt-3 w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-surface-100 hover:bg-surface-200 text-surface-600 text-sm font-semibold transition-colors">
                   ✏️ Editar datos
                 </Link>
+                <button
+                  onClick={() => setConfirmToggle(true)}
+                  disabled={toggling}
+                  className={`mt-2 w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-colors disabled:opacity-50 ${
+                    isActive
+                      ? 'bg-red-50 hover:bg-red-100 text-red-600'
+                      : 'bg-brand-500 hover:bg-brand-600 text-white'
+                  }`}
+                >
+                  {isActive ? '🚫 Desactivar paciente' : '✅ Activar paciente'}
+                </button>
               </div>
             </div>
+
+            <ConfirmDialog
+              open={confirmToggle}
+              title={isActive ? 'Desactivar paciente' : 'Activar paciente'}
+              message={isActive
+                ? `El paciente ${patient.nombre} dejará de aparecer en el dashboard y no recibirá notificaciones.`
+                : `El paciente ${patient.nombre} volverá a estar activo y visible en el dashboard.`}
+              confirmLabel={isActive ? 'Desactivar' : 'Activar'}
+              danger={isActive}
+              onConfirm={handleToggleActive}
+              onCancel={() => setConfirmToggle(false)}
+            />
 
             {/* Propietario */}
             <div className="bg-white rounded-2xl border border-surface-200 shadow-sm p-4">
@@ -93,7 +148,17 @@ export default function PatientProfilePage() {
           </div>
 
           {/* ── Columna derecha: historial ── */}
-          <div className="lg:col-span-2">
+          <div className="lg:col-span-2 space-y-4">
+            <VaccinationsSection patientId={id} />
+            <LabExamsSection patientId={id} />
+            <PrescriptionsSection
+              patientId={id}
+              patientNombre={patient.nombre}
+              tutorTelefono={patient.tutor?.telefono}
+            />
+            <EcografiasSection patientId={id} />
+
+            <div>
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-black text-surface-800 text-lg">
                 Historial de Consultas
@@ -133,6 +198,7 @@ export default function PatientProfilePage() {
                 ))}
               </div>
             )}
+            </div>
           </div>
         </div>
       </div>

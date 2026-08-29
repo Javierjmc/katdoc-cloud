@@ -47,6 +47,21 @@ export function formatearFechaCorta(fecha: string | null | undefined): string {
 }
 
 /**
+ * Normaliza un teléfono venezolano a formato internacional para wa.me.
+ * "0412-1234567" / "+58 412 1234567" → "584121234567"
+ * Devuelve null si no se reconoce.
+ */
+export function normalizePhoneForWhatsApp(telefono?: string | null): string | null {
+  if (!telefono) return null;
+  const digits = telefono.replace(/\D/g, '');
+  if (digits.length === 11 && digits.startsWith('58')) return digits;
+  if (digits.length === 10 && digits.startsWith('0')) return `58${digits.slice(1)}`;
+  if (digits.length === 12 && digits.startsWith('0058')) return digits.slice(2);
+  if (digits.length >= 11 && digits.startsWith('58')) return digits;
+  return null;
+}
+
+/**
  * Trunca un texto a N caracteres y agrega "..." si excede.
  */
 export function truncar(texto: string | null | undefined, maxLen = 80): string {

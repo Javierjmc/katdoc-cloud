@@ -19,7 +19,7 @@ interface UsePatientOptions {
 }
 
 // ─── Hook: lista de pacientes ────────────────────────────────
-export function usePatients() {
+export function usePatients(options?: { active?: boolean }) {
   const [patients, setPatients] = useState<PatientWithTutor[]>([]);
   const [loading, setLoading]   = useState(true);
   const [error, setError]       = useState<string | null>(null);
@@ -28,10 +28,16 @@ export function usePatients() {
     setLoading(true);
     setError(null);
 
-    const { data, error: err } = await supabase
+    let query = supabase
       .from('patients')
       .select('*, tutor:tutors(*)')
       .order('created_at', { ascending: false });
+
+    if (options?.active !== undefined) {
+      query = query.eq('active', options.active);
+    }
+
+    const { data, error: err } = await query;
 
     if (err) {
       setError(err.message);
@@ -39,7 +45,7 @@ export function usePatients() {
       setPatients((data ?? []) as PatientWithTutor[]);
     }
     setLoading(false);
-  }, []);
+  }, [options?.active]);
 
   useEffect(() => { fetchPatients(); }, [fetchPatients]);
 
@@ -52,58 +58,63 @@ export function usePatient(patientId: string | undefined) {
   const [loading, setLoading] = useState(true);
   const [error, setError]     = useState<string | null>(null);
 
-  useEffect(() => {
+  const fetchPatient = useCallback(async () => {
     if (!patientId) { setLoading(false); return; }
+    setLoading(true);
+    const { data, error: err } = await supabase
+      .from('patients')
+      .select('*, tutor:tutors(*)')
+      .eq('id', patientId)
+      .single();
 
-    async function fetchPatient() {
-      setLoading(true);
-      const { data, error: err } = await supabase
-        .from('patients')
-        .select('*, tutor:tutors(*)')
-        .eq('id', patientId)
-        .single();
-
-      if (err) setError(err.message);
-      else     setPatient(data as PatientWithTutor);
-      setLoading(false);
-    }
-
-    fetchPatient();
+    if (err) setError(err.message);
+    else     setPatient(data as PatientWithTutor);
+    setLoading(false);
   }, [patientId]);
 
-  return { patient, loading, error };
+  useEffect(() => { fetchPatient(); }, [fetchPatient]);
+
+  return { patient, loading, error, refetch: fetchPatient };
 }
 
 // ─── Función: crear tutor + paciente (transacción lógica) ───
 export async function createPatientWithTutor(
-  input: CreatePatientInput
+  input: CreatePatientInput,
+  opts?: { tutorId?: string }
 ): Promise<{ patientId: string | null; error: string | null }> {
-  // 1. Buscar si ya existe un tutor con esa cédula
-  let tutorId: string | null = null;
+  let tutorId: string | null = opts?.tutorId ?? null;
 
-  if (input.tutor.cedula) {
-    const { data: existingTutor } = await supabase
-      .from('tutors')
-      .select('id')
-      .eq('cedula', input.tutor.cedula)
-      .maybeSingle();
-
-    if (existingTutor) tutorId = existingTutor.id;
-  }
-
-  // 2. Si no existe, crear el tutor
+  // 1. Si venimos desde la página de tutores (tutorId explícito), usarlo
+  //    directamente sin re-buscar por cédula (evita duplicados y falsos negativos).
   if (!tutorId) {
-    const { data: newTutor, error: tutorError } = await supabase
-      .from('tutors')
-      .insert(input.tutor)
-      .select('id')
-      .single();
+    // 2. Buscar si ya existe un tutor con esa cédula — comparación normalizada
+    //    (trim + uppercase) para no fallar por formato de mayúsculas/espacios.
+    const cedula = (input.tutor.cedula ?? '').trim().toUpperCase();
 
-    if (tutorError) return { patientId: null, error: tutorError.message };
-    tutorId = newTutor.id;
+    if (cedula) {
+      const { data: existingTutor } = await supabase
+        .from('tutors')
+        .select('id')
+        .eq('cedula', cedula)
+        .maybeSingle();
+
+      if (existingTutor) tutorId = existingTutor.id;
+    }
+
+    // 3. Si no existe, crear el tutor (con cédula normalizada)
+    if (!tutorId) {
+      const { data: newTutor, error: tutorError } = await supabase
+        .from('tutors')
+        .insert({ ...input.tutor, cedula })
+        .select('id')
+        .single();
+
+      if (tutorError) return { patientId: null, error: tutorError.message };
+      tutorId = newTutor.id;
+    }
   }
 
-  // 3. Crear el paciente
+  // 4. Crear el paciente
   const { data: newPatient, error: patientError } = await supabase
     .from('patients')
     .insert({ ...input.patient, tutor_id: tutorId })
