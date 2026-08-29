@@ -36,13 +36,23 @@ export async function updateReminderEstado(
   estado: Reminder['estado'],
   canal?: string
 ): Promise<{ error: string | null }> {
+  const patch: Record<string, unknown> = { estado };
+
+  if (estado === 'enviado') {
+    patch.canal = canal ?? null;
+    patch.fecha_envio = new Date().toISOString();
+    patch.fecha_seguimiento = null;
+  } else if (estado === 'seguimiento') {
+    patch.fecha_seguimiento = new Date().toISOString();
+    patch.canal = canal ?? null;
+  } else {
+    patch.canal = canal ?? null;
+    patch.fecha_envio = null;
+  }
+
   const { error } = await supabase
     .from('reminders')
-    .update({
-      estado,
-      canal: canal ?? null,
-      fecha_envio: estado === 'enviado' ? new Date().toISOString() : null,
-    })
+    .update(patch)
     .eq('id', id);
 
   return { error: error?.message ?? null };

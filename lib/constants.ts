@@ -46,6 +46,8 @@ export const NOTIFICATION_TYPES: { tipo: string; label: string; descripcion: str
   { tipo: 'desparasitacion', label: 'Desparasitación',         descripcion: 'Próxima desparasitación' },
   { tipo: 'examen',          label: 'Exámenes de laboratorio', descripcion: 'Próximo control de exámenes' },
   { tipo: 'control',         label: 'Controles',               descripcion: 'Controles generales' },
+  { tipo: 'cita',            label: 'Citas',                   descripcion: 'Cita agendada próxima' },
+  { tipo: 'seguimiento',     label: 'Seguimiento sin respuesta', descripcion: 'Días sin respuesta antes de re-contactar' },
 ];
 
 // Presets rápidos de ventana en días (editable por el usuario)

@@ -13,6 +13,7 @@ import VaccinationsSection from '@/components/VaccinationsSection';
 import LabExamsSection from '@/components/LabExamsSection';
 import PrescriptionsSection from '@/components/PrescriptionsSection';
 import EcografiasSection from '@/components/EcografiasSection';
+import AppointmentsSection from '@/components/AppointmentsSection';
 import { calcularEdad } from '@/lib/utils';
 
 export default function PatientProfilePage() {
@@ -149,6 +150,7 @@ export default function PatientProfilePage() {
 
           {/* ── Columna derecha: historial ── */}
           <div className="lg:col-span-2 space-y-4">
+            <AppointmentsSection patientId={id} tutorId={patient.tutor?.id} />
             <VaccinationsSection patientId={id} />
             <LabExamsSection patientId={id} />
             <PrescriptionsSection

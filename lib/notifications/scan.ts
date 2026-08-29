@@ -98,6 +98,37 @@ export async function scanReminders(): Promise<ScanResult> {
     else errores++;
   }
 
+  // 4. Citas agendadas (S22/S24): programadas o confirmadas
+  const { data: citas, error: citErr } = await supabase
+    .from('appointments')
+    .select('id, fecha, hora, motivo, estado, patient:patients!inner(id, nombre, active, tutor:tutors!inner(id, nombre, telefono, email))')
+    .or('estado.eq.programada,estado.eq.confirmada')
+    .eq('patient.active', true);
+
+  if (citErr) throw new Error(`Error leyendo citas: ${citErr.message}`);
+
+  for (const c of (citas ?? []) as unknown as {
+    fecha: string; hora?: string; motivo?: string;
+    patient: { id: string; nombre: string; tutor: { id: string; nombre: string; telefono?: string; email?: string } };
+  }[]) {
+    const cfg = configMap.get('cita');
+    if (!cfg) continue;
+
+    const titulo = c.motivo || 'Cita agendada';
+    const ok = await insertIfInWindow({
+      patient_id: c.patient.id,
+      tutor_id: c.patient.tutor.id,
+      tipo: 'cita',
+      titulo,
+      descripcion: c.hora ? `Paciente ${c.patient.nombre} · ${c.hora}` : `Paciente ${c.patient.nombre}`,
+      fecha_evento: c.fecha,
+      cfg,
+    });
+    if (ok === 'created') creados++;
+    else if (ok === 'exists') existentes++;
+    else errores++;
+  }
+
   return { creados, existentes, errores };
 }
 

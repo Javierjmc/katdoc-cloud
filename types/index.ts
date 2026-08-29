@@ -132,6 +132,28 @@ export type Ecografia = {
   created_at: string;
 };
 
+export type Appointment = {
+  id: string;
+  patient_id: string;
+  tutor_id?: string;
+  fecha: string;
+  hora?: string;
+  motivo?: string;
+  estado: AppointmentState;
+  notas?: string;
+  created_at: string;
+  // Relación expandida
+  patient?: { id: string; nombre: string; especie?: string; raza?: string };
+  tutor?: { id: string; nombre: string; telefono?: string; email?: string };
+};
+
+export type AppointmentState =
+  | 'programada'
+  | 'confirmada'
+  | 'completada'
+  | 'cancelada'
+  | 'no_asistio';
+
 export type NotificationConfig = {
   id: string;
   tipo: string;
@@ -152,9 +174,10 @@ export type Reminder = {
   descripcion?: string;
   fecha_evento: string;
   fecha_ventana: string;
-  estado: 'pendiente' | 'enviado' | 'descartado';
+  estado: 'pendiente' | 'enviado' | 'descartado' | 'seguimiento';
   canal?: string;
   fecha_envio?: string;
+  fecha_seguimiento?: string;
   created_at: string;
   // Relación expandida
   patient?: { id: string; nombre: string; active?: boolean };
@@ -262,6 +285,15 @@ export type MucosasOption   = typeof MUCOSAS_OPTIONS[number];
 
 // Especies disponibles
 export const ESPECIES = ['Canino', 'Felino', 'Exótico', 'Bovino', 'Equino', 'Otro'] as const;
+
+// ─── Estados de citas ─────────────────────────────────────────
+export const APPOINTMENT_STATES: { value: AppointmentState; label: string; color: 'brand' | 'green' | 'slate' | 'red' }[] = [
+  { value: 'programada', label: 'Programada',   color: 'brand' },
+  { value: 'confirmada', label: 'Confirmada',   color: 'green' },
+  { value: 'completada', label: 'Completada',   color: 'slate' },
+  { value: 'cancelada',  label: 'Cancelada',    color: 'red'   },
+  { value: 'no_asistio', label: 'No asistió',   color: 'red'   },
+];
 
 // ─── Vista del Dashboard ────────────────────────────────────
 
