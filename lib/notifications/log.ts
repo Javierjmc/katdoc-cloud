@@ -9,7 +9,7 @@ export async function logNotification(input: {
   reminderId?: string;
   canal: 'whatsapp' | 'email';
   destino: string;
-  estado: 'enviado' | 'error' | 'simulado';
+  estado: 'enviado' | 'error' | 'simulado' | 'sin_respuesta';
   detalle?: string;
 }): Promise<void> {
   await supabase.from('notification_log').insert({

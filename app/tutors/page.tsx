@@ -6,6 +6,8 @@ import Image from 'next/image';
 import { supabase } from '@/lib/supabase';
 import AppShell from '@/components/AppShell';
 import { useDebounce } from '@/hooks/useDebounce';
+import { useLoadMore } from '@/hooks/useLoadMore';
+import { LoadMoreButton } from '@/components/ui';
 
 type TutorWithPatients = {
   id: string; nombre: string; cedula: string;
@@ -39,6 +41,9 @@ export default function TutorsPage() {
       t.telefono?.includes(q) || t.patients.some(p => p.nombre.toLowerCase().includes(q))
     );
   }, [tutors, debouncedSearch]);
+
+  const PAGE_SIZE = 10;
+  const { visible, hasMore, loadMore } = useLoadMore(filtered, PAGE_SIZE);
 
   const emoji: Record<string, string> = { Canino:'🐶', Felino:'🐱', Exótico:'🦜', Bovino:'🐄', Equino:'🐴', Otro:'🐾' };
 
@@ -76,7 +81,7 @@ export default function TutorsPage() {
           <div className="text-center py-20"><span className="text-5xl">👥</span><p className="font-bold text-surface-600 mt-3">Sin resultados</p></div>
         ) : (
           <div className="space-y-3">
-            {filtered.map(tutor => (
+            {visible.map(tutor => (
               <div key={tutor.id} className="bg-white rounded-2xl border border-surface-200 shadow-sm overflow-hidden">
 
                 {/* Cabecera clickeable */}
@@ -159,6 +164,7 @@ export default function TutorsPage() {
             ))}
           </div>
         )}
+        {hasMore && !loading && <LoadMoreButton visible={visible.length} total={filtered.length} onClick={loadMore} />}
       </div>
     </AppShell>
   );

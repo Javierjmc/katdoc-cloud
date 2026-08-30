@@ -7,3 +7,4 @@ export { Badge, Spinner, PageLoader, EmptyState, Card, ErrorMessage, SuccessMess
 export { PageHeader }                       from './PageHeader';
 export { ConfirmDialog }                    from './ConfirmDialog';
 export { ToastProvider, useToast }          from './Toast';
+export { LoadMoreButton }                   from './LoadMoreButton';

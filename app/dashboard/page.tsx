@@ -9,6 +9,8 @@ import type { DashboardRow } from '@/types';
 import { ESPECIES } from '@/types';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
+import { useLoadMore } from '@/hooks/useLoadMore';
+import { LoadMoreButton } from '@/components/ui';
 import { useCalendarEvents, type CalendarEvent } from '@/hooks/useCalendarEvents';
 
 export default function DashboardPage() {
@@ -48,6 +50,9 @@ export default function DashboardPage() {
       return matchSearch && (!filterEspecie || row.especie === filterEspecie);
     });
   }, [rows, debouncedSearch, filterEspecie]);
+
+  const PAGE_SIZE = 9;
+  const { visible, hasMore, loadMore } = useLoadMore(filtered, PAGE_SIZE);
 
   const uniquePatients = new Set(rows.map(r => r.patient_id)).size;
   const uniqueTutors   = new Set(rows.map(r => r.tutor_id)).size;
@@ -149,9 +154,10 @@ export default function DashboardPage() {
             </div>
           ) : (
             <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-              {filtered.map(row => <PatientCard key={`${row.patient_id}-${row.record_id}`} row={row} />)}
+              {visible.map(row => <PatientCard key={`${row.patient_id}-${row.record_id}`} row={row} />)}
             </div>
           )}
+          {hasMore && !loading && <LoadMoreButton visible={visible.length} total={filtered.length} onClick={loadMore} />}
         </div>
       </div>
     </AppShell>

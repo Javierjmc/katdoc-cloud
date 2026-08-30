@@ -8,6 +8,8 @@ import AppShell from '@/components/AppShell';
 import { ESPECIES } from '@/types';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
+import { useLoadMore } from '@/hooks/useLoadMore';
+import { LoadMoreButton } from '@/components/ui';
 import { calcularEdad } from '@/lib/utils';
 
 type PatientRow = {
@@ -51,6 +53,9 @@ export default function PatientsPage() {
       return matchSearch && (!filterEspecie || p.especie === filterEspecie);
     });
   }, [tabPatients, debouncedSearch, filterEspecie]);
+
+  const PAGE_SIZE = 12;
+  const { visible, hasMore, loadMore } = useLoadMore(filtered, PAGE_SIZE);
 
   const emoji: Record<string, string> = { Canino:'🐶', Felino:'🐱', Exótico:'🦜', Bovino:'🐄', Equino:'🐴', Otro:'🐾' };
 
@@ -112,7 +117,7 @@ export default function PatientsPage() {
           </div>
         ) : view === 'grid' ? (
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {filtered.map(p => (
+            {visible.map(p => (
               <Link key={p.id} href={`/patients/${p.id}`}
                 className="bg-white rounded-2xl border border-surface-200 hover:border-brand-400 hover:shadow-md hover:shadow-brand-500/10 transition-all group overflow-hidden"
               >
@@ -141,7 +146,7 @@ export default function PatientsPage() {
           </div>
         ) : (
           <div className="space-y-2">
-            {filtered.map(p => (
+            {visible.map(p => (
               <Link key={p.id} href={`/patients/${p.id}`}
                 className="flex items-center gap-4 bg-white rounded-2xl border border-surface-200 hover:border-brand-400 p-3 transition-all group"
               >
@@ -164,6 +169,7 @@ export default function PatientsPage() {
             ))}
           </div>
         )}
+        {hasMore && !loading && <LoadMoreButton visible={visible.length} total={filtered.length} onClick={loadMore} />}
       </div>
     </AppShell>
   );

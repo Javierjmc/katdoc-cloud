@@ -3,11 +3,12 @@
 // Centro de notificaciones (S15 + S24): recordatorios pendientes por
 // urgencia + pestaña de seguimiento para clientes que no respondieron.
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import AppShell from '@/components/AppShell';
 import { useToast } from '@/components/ui/Toast';
 import { PageLoader, EmptyState } from '@/components/ui/Badge';
 import { useReminders, updateReminderEstado, runScanNow } from '@/hooks/useReminders';
+import { useNotificationLog } from '@/hooks/useNotificationLog';
 import { buildWhatsAppLink, buildMensajeRecordatorio, buildEmailRecordatorio } from '@/lib/notifications/messages';
 import { logNotification } from '@/lib/notifications/log';
 import { appPinHeader } from '@/lib/api-auth';
@@ -59,6 +60,13 @@ export default function NotificationsPage() {
 
   const marcarSinRespuesta = async (r: Reminder) => {
     await setEstado(r, 'seguimiento', r.canal as 'whatsapp' | 'email' | undefined);
+    await logNotification({
+      reminderId: r.id,
+      canal: (r.canal as 'whatsapp' | 'email') ?? 'whatsapp',
+      destino: (r.canal === 'email' ? r.tutor?.email : r.tutor?.telefono) ?? '',
+      estado: 'sin_respuesta',
+      detalle: 'Marcado como sin respuesta — se pasa a seguimiento',
+    });
     toast('En seguimiento: re-contactar al cliente', 'info');
   };
 
@@ -75,6 +83,13 @@ export default function NotificationsPage() {
   const sendWhatsApp = (r: Reminder) => {
     const url = buildWhatsAppLink(r.tutor?.telefono, buildMensajeRecordatorio(r));
     if (!url) { toast('El tutor no tiene teléfono válido para WhatsApp', 'error'); return; }
+    logNotification({
+      reminderId: r.id,
+      canal: 'whatsapp',
+      destino: r.tutor?.telefono ?? '',
+      estado: 'enviado',
+      detalle: 'Enlace WhatsApp abierto (manual)',
+    });
     window.open(url, '_blank');
   };
 
@@ -283,6 +298,14 @@ function SeguimientoCard({ r, busy, onWhatsApp, onEmail, onMarcar, onVolver, onD
     ? Math.max(0, Math.floor((new Date().getTime() - new Date(r.fecha_seguimiento).getTime()) / 86400000))
     : 0;
 
+  const { logs, loading: logsLoading, refetch: refetchLogs } = useNotificationLog(r.id);
+  const [showHistorial, setShowHistorial] = useState(false);
+
+  useEffect(() => {
+    if (r.fecha_envio || r.fecha_seguimiento) refetchLogs();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [r.fecha_envio, r.fecha_seguimiento, r.estado]);
+
   return (
     <div className="bg-white rounded-2xl border border-yellow-200 shadow-sm p-4 space-y-2">
       <div className="flex items-start justify-between gap-2">
@@ -323,6 +346,40 @@ function SeguimientoCard({ r, busy, onWhatsApp, onEmail, onMarcar, onVolver, onD
           className="px-3 py-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-500 text-xs font-semibold transition-colors disabled:opacity-50">
           Descartar
         </button>
+      </div>
+
+      {/* Historial de intentos */}
+      <div className="border-t border-surface-100 pt-2">
+        <button
+          onClick={() => setShowHistorial(h => !h)}
+          className="text-xs font-bold text-surface-500 hover:text-brand-600 transition-colors flex items-center gap-1"
+        >
+          {showHistorial ? '▾' : '▸'} Historial de intentos ({logsLoading ? '…' : logs.length})
+        </button>
+
+        {showHistorial && (
+          <div className="mt-2 space-y-1.5">
+            {logs.length === 0 ? (
+              <p className="text-xs text-surface-400 py-1">Sin intentos registrados.</p>
+            ) : (
+              logs.map(log => (
+                <div key={log.id} className="flex items-start gap-2 text-xs">
+                  <span className={`shrink-0 w-1.5 h-1.5 rounded-full mt-1 ${log.estado === 'enviado' ? 'bg-green-500' : log.estado === 'sin_respuesta' ? 'bg-yellow-500' : log.estado === 'error' ? 'bg-red-500' : 'bg-surface-300'}`} />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-surface-700 font-semibold capitalize">
+                      {log.estado === 'sin_respuesta' ? 'Sin respuesta' : log.estado}
+                      {log.canal && <span className="text-surface-400 font-normal"> · {log.canal === 'whatsapp' ? 'WhatsApp' : 'Email'}</span>}
+                    </p>
+                    {log.detalle && <p className="text-surface-400">{log.detalle}</p>}
+                  </div>
+                  <span className="text-surface-400 shrink-0">
+                    {new Date(log.created_at).toLocaleString('es-VE', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                  </span>
+                </div>
+              ))
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
