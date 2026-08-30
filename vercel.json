@@ -3,7 +3,7 @@
   "devCommand":   "npm run dev",
   "installCommand": "npm install",
   "framework": "nextjs",
-  "regions": ["gru1"],
+  "regions": ["iad1"],
   "crons": [
     {
       "path": "/api/reminders/scan",
