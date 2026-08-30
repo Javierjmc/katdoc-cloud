@@ -9,6 +9,7 @@ import type { DashboardRow } from '@/types';
 import { ESPECIES } from '@/types';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
+import { useCalendarEvents, type CalendarEvent } from '@/hooks/useCalendarEvents';
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -17,6 +18,17 @@ export default function DashboardPage() {
   const [search, setSearch]   = useState('');
   const [filterEspecie, setFilterEspecie] = useLocalStorage('dashboard_especie', '');
   const debouncedSearch = useDebounce(search, 250);
+
+  // Próximos eventos (7 días)
+  const today = new Date();
+  const weekFrom = toYMD(today);
+  const weekTo   = toYMD(new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000));
+  const { events, loading: eventsLoading } = useCalendarEvents(weekFrom, weekTo);
+
+  const upcoming = useMemo(() => events.filter(e => {
+    if (e.type !== 'cita') return true;
+    return e.estado === 'programada' || e.estado === 'confirmada';
+  }), [events]);
 
   useEffect(() => {
     const auth = sessionStorage.getItem('vetcare_auth');
@@ -62,6 +74,45 @@ export default function DashboardPage() {
           <StatCard icon="📋" label="Consultas" value={totalRecords}   color="text-green-600" bg="bg-green-50" loading={loading} />
         </div>
 
+        {/* Próximos eventos (7 días) */}
+        <section className="bg-white rounded-2xl border border-surface-200 p-4 shadow-sm space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="font-black text-surface-800 text-sm flex items-center gap-2">📅 Próximos eventos</h2>
+            <Link href="/agenda" className="text-xs font-bold text-brand-600 hover:text-brand-700">Ver agenda ›</Link>
+          </div>
+
+          {eventsLoading ? (
+            <div className="space-y-2">
+              {[1, 2, 3].map(i => <div key={i} className="h-12 rounded-xl bg-surface-200 animate-pulse" />)}
+            </div>
+          ) : upcoming.length === 0 ? (
+            <p className="text-sm text-surface-400 py-3 text-center">Sin citas ni controles pendientes esta semana.</p>
+          ) : (
+            <div className="space-y-2">
+              {upcoming.map(e => (
+                <Link key={`${e.type}-${e.id}`} href={`/patients/${e.patientId}`}
+                  className="flex items-center gap-3 p-2.5 rounded-xl border border-surface-200 hover:border-brand-400 hover:bg-brand-50/40 transition-colors">
+                  <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${EVENT_META[e.type].dot}`} />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="font-bold text-sm text-surface-800 truncate">{e.titulo}</p>
+                      <span className={`text-[10px] px-2 py-0.5 rounded-full border font-bold ${EVENT_META[e.type].badge}`}>{EVENT_META[e.type].label}</span>
+                    </div>
+                    <p className="text-xs text-surface-500 mt-0.5 truncate">
+                      🐾 {e.patientNombre}
+                      <span className="text-surface-300"> · </span>
+                      {new Date(e.fecha + 'T12:00:00').toLocaleDateString('es-VE', { weekday: 'short', day: 'numeric', month: 'short' })}
+                      {e.hora && <span className="text-surface-300"> · </span>}
+                      {e.hora && <span>🕐 {e.hora}</span>}
+                    </p>
+                  </div>
+                  <span className="text-surface-300 text-lg">›</span>
+                </Link>
+              ))}
+            </div>
+          )}
+        </section>
+
         {/* Buscador */}
         <div className="bg-white rounded-2xl border border-surface-200 p-4 shadow-sm space-y-3">
           <div className="relative">
@@ -106,6 +157,17 @@ export default function DashboardPage() {
     </AppShell>
   );
 }
+
+function toYMD(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+const EVENT_META: Record<CalendarEvent['type'], { label: string; dot: string; badge: string }> = {
+  cita:            { label: 'Cita',            dot: 'bg-brand-500',  badge: 'bg-brand-50 text-brand-600 border-brand-200' },
+  vacuna:          { label: 'Vacuna',          dot: 'bg-blue-500',   badge: 'bg-blue-50 text-blue-600 border-blue-200' },
+  desparasitacion: { label: 'Desparasitación', dot: 'bg-green-500',  badge: 'bg-green-50 text-green-700 border-green-200' },
+  examen:          { label: 'Control examen',  dot: 'bg-yellow-500', badge: 'bg-yellow-50 text-yellow-700 border-yellow-200' },
+};
 
 function StatCard({ icon, label, value, color, bg, loading }: {
   icon: string; label: string; value: number; color: string; bg: string; loading: boolean;
