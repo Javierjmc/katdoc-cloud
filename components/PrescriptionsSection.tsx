@@ -133,9 +133,9 @@ export default function PrescriptionsSection({ patientId, patientNombre, tutorTe
   };
 
   return (
-    <div className="bg-white rounded-2xl border border-surface-200 shadow-sm overflow-hidden">
-      <div className="flex items-center justify-between px-4 py-3 border-b border-surface-100">
-        <h3 className="text-sm font-black text-surface-700">💊 Recetas</h3>
+    <div className="bg-white dark:bg-surface-800 rounded-2xl border border-surface-200 dark:border-surface-700 shadow-sm overflow-hidden">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-surface-100 dark:border-surface-800">
+        <h3 className="text-sm font-black text-surface-700 dark:text-surface-200">💊 Recetas</h3>
         <button onClick={openCreate} className="px-3 py-1.5 rounded-lg bg-brand-500 hover:bg-brand-600 text-white text-xs font-bold transition-colors">
           + Nueva receta
         </button>
@@ -143,22 +143,22 @@ export default function PrescriptionsSection({ patientId, patientNombre, tutorTe
 
       <div className="p-4 space-y-2">
         {loading ? (
-          <div className="space-y-2">{[1, 2].map(i => <div key={i} className="h-14 rounded-xl bg-surface-100 animate-pulse" />)}</div>
+          <div className="space-y-2">{[1, 2].map(i => <div key={i} className="h-14 rounded-xl bg-surface-100 dark:bg-surface-800 animate-pulse" />)}</div>
         ) : prescriptions.length === 0 ? (
           <EmptyState icon="💊" title="Sin recetas" subtitle="Crea una receta con uno o varios medicamentos."
             action={<Button size="sm" onClick={openCreate}>Nueva receta</Button>} />
         ) : (
           prescriptions.map(p => (
-            <div key={p.id} className="p-3 rounded-xl border border-surface-200">
+            <div key={p.id} className="p-3 rounded-xl border border-surface-200 dark:border-surface-700">
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
-                  <p className="font-bold text-sm text-surface-800">{p.titulo ?? 'Receta'}</p>
-                  <p className="text-xs text-surface-500">{p.fecha ? new Date(p.fecha).toLocaleDateString('es-VE') : 'Sin fecha'} · {p.medicamentos.length} medicamento{p.medicamentos.length !== 1 ? 's' : ''}</p>
+                  <p className="font-bold text-sm text-surface-800 dark:text-white">{p.titulo ?? 'Receta'}</p>
+                  <p className="text-xs text-surface-500 dark:text-surface-400">{p.fecha ? new Date(p.fecha).toLocaleDateString('es-VE') : 'Sin fecha'} · {p.medicamentos.length} medicamento{p.medicamentos.length !== 1 ? 's' : ''}</p>
                 </div>
                 <div className="flex gap-1 shrink-0">
                   <button onClick={() => sendWhatsApp(p)} className="px-2 py-1 rounded-lg bg-green-50 hover:bg-green-100 text-green-700 text-xs font-semibold">📲 WhatsApp</button>
-                  <button onClick={() => setPrintTarget(p)} className="px-2 py-1 rounded-lg bg-surface-100 hover:bg-surface-200 text-surface-600 text-xs font-semibold">🖨</button>
-                  <button onClick={() => openEdit(p)} className="w-8 h-8 rounded-lg bg-surface-100 hover:bg-surface-200 text-surface-600 text-xs" aria-label="Editar">✏️</button>
+                  <button onClick={() => setPrintTarget(p)} className="px-2 py-1 rounded-lg bg-surface-100 dark:bg-surface-800 hover:bg-surface-200 dark:hover:bg-surface-700 text-surface-600 dark:text-surface-300 text-xs font-semibold">🖨</button>
+                  <button onClick={() => openEdit(p)} className="w-8 h-8 rounded-lg bg-surface-100 dark:bg-surface-800 hover:bg-surface-200 dark:hover:bg-surface-700 text-surface-600 dark:text-surface-300 text-xs" aria-label="Editar">✏️</button>
                   <button onClick={() => setToDelete(p)} className="w-8 h-8 rounded-lg bg-red-50 hover:bg-red-100 text-red-500 text-xs" aria-label="Eliminar">🗑️</button>
                 </div>
               </div>
@@ -170,8 +170,8 @@ export default function PrescriptionsSection({ patientId, patientNombre, tutorTe
       {/* Editor */}
       {editor && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={() => !saving && setEditor(null)}>
-          <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-3xl bg-white border border-surface-200 shadow-2xl p-6 space-y-3" onClick={e => e.stopPropagation()}>
-            <h3 className="text-base font-bold text-surface-800">{editor.mode === 'create' ? 'Nueva receta' : 'Editar receta'}</h3>
+          <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-3xl bg-white dark:bg-surface-800 border border-surface-200 dark:border-surface-700 shadow-2xl p-6 space-y-3" onClick={e => e.stopPropagation()}>
+            <h3 className="text-base font-bold text-surface-800 dark:text-white">{editor.mode === 'create' ? 'Nueva receta' : 'Editar receta'}</h3>
 
             <div className="grid grid-cols-2 gap-3">
               <Field label="Título">
@@ -184,17 +184,17 @@ export default function PrescriptionsSection({ patientId, patientNombre, tutorTe
 
             <div>
               <div className="flex items-center justify-between mb-2">
-                <p className="text-xs font-black text-surface-600 uppercase tracking-wide">Medicamentos</p>
+                <p className="text-xs font-black text-surface-600 dark:text-surface-300 uppercase tracking-wide">Medicamentos</p>
                 <button onClick={addMed} className="text-xs font-bold text-brand-500 hover:text-brand-600">+ Agregar</button>
               </div>
               {editor.medicamentos.length === 0 ? (
-                <p className="text-xs text-surface-400 bg-surface-50 rounded-xl p-3">Sin medicamentos. Toca &quot;+ Agregar&quot; para empezar.</p>
+                <p className="text-xs text-surface-400 dark:text-surface-500 bg-surface-50 dark:bg-surface-900 rounded-xl p-3">Sin medicamentos. Toca &quot;+ Agregar&quot; para empezar.</p>
               ) : (
                 <div className="space-y-3">
                   {editor.medicamentos.map((m, idx) => (
-                    <div key={idx} className="rounded-xl border border-surface-200 p-3 space-y-2">
+                    <div key={idx} className="rounded-xl border border-surface-200 dark:border-surface-700 p-3 space-y-2">
                       <div className="flex items-center gap-2">
-                        <p className="text-xs font-bold text-surface-500">#{idx + 1}</p>
+                        <p className="text-xs font-bold text-surface-500 dark:text-surface-400">#{idx + 1}</p>
                         <div className="flex-1" />
                         <button onClick={() => removeMed(idx)} className="w-7 h-7 rounded-lg bg-red-50 text-red-500 text-xs" aria-label="Quitar">✕</button>
                       </div>
@@ -252,25 +252,25 @@ export default function PrescriptionsSection({ patientId, patientNombre, tutorTe
       {/* Impresión */}
       {printTarget && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" onClick={() => setPrintTarget(null)}>
-          <div className="w-full max-w-md rounded-3xl bg-white shadow-2xl p-6" onClick={e => e.stopPropagation()}>
-            <div className="print-area text-sm text-surface-800">
-              <div className="text-center border-b border-surface-200 pb-3 mb-3">
+          <div className="w-full max-w-md rounded-3xl bg-white dark:bg-surface-800 shadow-2xl p-6" onClick={e => e.stopPropagation()}>
+            <div className="print-area text-sm text-surface-800 dark:text-white">
+              <div className="text-center border-b border-surface-200 dark:border-surface-700 pb-3 mb-3">
                 <p className="font-black text-lg">🐾 KATDOC</p>
-                <p className="text-xs text-surface-500">Receta {patientNombre ? `— ${patientNombre}` : ''}</p>
-                <p className="text-xs text-surface-500">{printTarget.fecha ? new Date(printTarget.fecha).toLocaleDateString('es-VE') : ''}</p>
+                <p className="text-xs text-surface-500 dark:text-surface-400">Receta {patientNombre ? `— ${patientNombre}` : ''}</p>
+                <p className="text-xs text-surface-500 dark:text-surface-400">{printTarget.fecha ? new Date(printTarget.fecha).toLocaleDateString('es-VE') : ''}</p>
               </div>
               {printTarget.medicamentos.map((m, i) => (
                 <div key={i} className="mb-3">
                   <p className="font-bold">{i + 1}. {m.nombre}</p>
-                  {m.presentacion && <p className="text-xs text-surface-600">Presentación: {m.presentacion}</p>}
-                  {m.dosis && <p className="text-xs text-surface-600">Dosis: {m.dosis}</p>}
-                  {m.frecuencia && <p className="text-xs text-surface-600">Frecuencia: {m.frecuencia}</p>}
-                  {m.duracion && <p className="text-xs text-surface-600">Duración: {m.duracion}</p>}
-                  {m.via && <p className="text-xs text-surface-600">Vía: {m.via}</p>}
-                  {m.indicaciones && <p className="text-xs text-surface-600">Indicaciones: {m.indicaciones}</p>}
+                  {m.presentacion && <p className="text-xs text-surface-600 dark:text-surface-300">Presentación: {m.presentacion}</p>}
+                  {m.dosis && <p className="text-xs text-surface-600 dark:text-surface-300">Dosis: {m.dosis}</p>}
+                  {m.frecuencia && <p className="text-xs text-surface-600 dark:text-surface-300">Frecuencia: {m.frecuencia}</p>}
+                  {m.duracion && <p className="text-xs text-surface-600 dark:text-surface-300">Duración: {m.duracion}</p>}
+                  {m.via && <p className="text-xs text-surface-600 dark:text-surface-300">Vía: {m.via}</p>}
+                  {m.indicaciones && <p className="text-xs text-surface-600 dark:text-surface-300">Indicaciones: {m.indicaciones}</p>}
                 </div>
               ))}
-              {printTarget.notas && <p className="text-xs text-surface-600 whitespace-pre-wrap mt-2">Notas: {printTarget.notas}</p>}
+              {printTarget.notas && <p className="text-xs text-surface-600 dark:text-surface-300 whitespace-pre-wrap mt-2">Notas: {printTarget.notas}</p>}
             </div>
             <div className="flex gap-2 mt-4">
               <Button variant="secondary" fullWidth onClick={() => setPrintTarget(null)}>Cerrar</Button>

@@ -45,7 +45,7 @@ function stateBadge(estado: AppointmentState) {
   const classes: Record<string, string> = {
     brand:  'bg-brand-50 text-brand-600 border-brand-200',
     green:  'bg-green-50 text-green-700 border-green-200',
-    slate:  'bg-surface-100 text-surface-500 border-surface-200',
+    slate:  'bg-surface-100 dark:bg-surface-800 text-surface-500 dark:text-surface-400 border-surface-200 dark:border-surface-700',
     red:    'bg-red-50 text-red-600 border-red-200',
   };
   return (
@@ -106,9 +106,9 @@ export default function AppointmentsSection({ patientId, tutorId }: { patientId:
   const past = appointments.filter(a => a.estado === 'completada' || a.estado === 'cancelada' || a.estado === 'no_asistio');
 
   return (
-    <div className="bg-white rounded-2xl border border-surface-200 shadow-sm overflow-hidden">
-      <div className="flex items-center justify-between px-4 py-3 border-b border-surface-100">
-        <h3 className="text-sm font-black text-surface-700">📅 Citas</h3>
+    <div className="bg-white dark:bg-surface-800 rounded-2xl border border-surface-200 dark:border-surface-700 shadow-sm overflow-hidden">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-surface-100 dark:border-surface-800">
+        <h3 className="text-sm font-black text-surface-700 dark:text-surface-200">📅 Citas</h3>
         <button
           onClick={openCreate}
           className="px-3 py-1.5 rounded-lg bg-brand-500 hover:bg-brand-600 text-white text-xs font-bold transition-colors"
@@ -119,7 +119,7 @@ export default function AppointmentsSection({ patientId, tutorId }: { patientId:
 
       <div className="p-4 space-y-2">
         {loading ? (
-          <div className="space-y-2">{[1, 2].map(i => <div key={i} className="h-14 rounded-xl bg-surface-100 animate-pulse" />)}</div>
+          <div className="space-y-2">{[1, 2].map(i => <div key={i} className="h-14 rounded-xl bg-surface-100 dark:bg-surface-800 animate-pulse" />)}</div>
         ) : appointments.length === 0 ? (
           <EmptyState icon="📅" title="Sin citas" subtitle="Agenda la próxima consulta del paciente."
             action={<Button size="sm" onClick={openCreate}>Agendar cita</Button>} />
@@ -132,7 +132,7 @@ export default function AppointmentsSection({ patientId, tutorId }: { patientId:
             )}
             {past.length > 0 && (
               <div className="pt-2">
-                <p className="text-[11px] font-black text-surface-400 uppercase tracking-wide mb-1.5">Historial</p>
+                <p className="text-[11px] font-black text-surface-400 dark:text-surface-500 uppercase tracking-wide mb-1.5">Historial</p>
                 <div className="space-y-2">
                   {past.map(a => <CitaRow key={a.id} a={a} onEdit={() => openEdit(a)} onDelete={() => setToDelete(a)} onChangeState={estado => changeState(a, estado)} />)}
                 </div>
@@ -145,8 +145,8 @@ export default function AppointmentsSection({ patientId, tutorId }: { patientId:
       {/* Editor */}
       {editor && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={() => !saving && setEditor(null)}>
-          <div className="w-full max-w-lg rounded-3xl bg-white border border-surface-200 shadow-2xl p-6 space-y-3" onClick={e => e.stopPropagation()}>
-            <h3 className="text-base font-bold text-surface-800">{editor.mode === 'create' ? 'Agendar cita' : 'Editar cita'}</h3>
+          <div className="w-full max-w-lg rounded-3xl bg-white dark:bg-surface-800 border border-surface-200 dark:border-surface-700 shadow-2xl p-6 space-y-3" onClick={e => e.stopPropagation()}>
+            <h3 className="text-base font-bold text-surface-800 dark:text-white">{editor.mode === 'create' ? 'Agendar cita' : 'Editar cita'}</h3>
 
             <div className="grid grid-cols-2 gap-3">
               <Field label="Fecha" required error={fieldErrors.fecha}>
@@ -196,29 +196,29 @@ function CitaRow({ a, onEdit, onDelete, onChangeState }: {
   onChangeState: (estado: AppointmentState) => void;
 }) {
   return (
-    <div className="flex items-center gap-3 p-3 rounded-xl border border-surface-200 hover:border-brand-400 transition-colors">
+    <div className="flex items-center gap-3 p-3 rounded-xl border border-surface-200 dark:border-surface-700 hover:border-brand-400 transition-colors">
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 flex-wrap">
-          <p className="font-bold text-sm text-surface-800">
+          <p className="font-bold text-sm text-surface-800 dark:text-white">
             {new Date(a.fecha).toLocaleDateString('es-VE')}
-            {a.hora && <span className="font-semibold text-surface-400 ml-1">· {a.hora}</span>}
+            {a.hora && <span className="font-semibold text-surface-400 dark:text-surface-500 ml-1">· {a.hora}</span>}
           </p>
           {stateBadge(a.estado)}
         </div>
-        {a.motivo && <p className="text-xs text-surface-500 mt-0.5">{a.motivo}</p>}
-        {a.notas && <p className="text-xs text-surface-400 mt-0.5">{a.notas}</p>}
+        {a.motivo && <p className="text-xs text-surface-500 dark:text-surface-400 mt-0.5">{a.motivo}</p>}
+        {a.notas && <p className="text-xs text-surface-400 dark:text-surface-500 mt-0.5">{a.notas}</p>}
       </div>
 
       <div className="flex gap-1 shrink-0 items-center">
         <select
           value={a.estado}
           onChange={e => onChangeState(e.target.value as AppointmentState)}
-          className="text-[11px] px-1.5 py-1 rounded-lg border border-surface-200 bg-white text-surface-600 focus:outline-none focus:border-brand-400"
+          className="text-[11px] px-1.5 py-1 rounded-lg border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 text-surface-600 dark:text-surface-300 focus:outline-none focus:border-brand-400"
           aria-label="Cambiar estado"
         >
           {APPOINTMENT_STATES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
         </select>
-        <button onClick={onEdit} className="w-8 h-8 rounded-lg bg-surface-100 hover:bg-surface-200 text-surface-600 text-xs" aria-label="Editar">✏️</button>
+        <button onClick={onEdit} className="w-8 h-8 rounded-lg bg-surface-100 dark:bg-surface-800 hover:bg-surface-200 dark:hover:bg-surface-700 text-surface-600 dark:text-surface-300 text-xs" aria-label="Editar">✏️</button>
         <button onClick={onDelete} className="w-8 h-8 rounded-lg bg-red-50 hover:bg-red-100 text-red-500 text-xs" aria-label="Eliminar">🗑️</button>
       </div>
     </div>

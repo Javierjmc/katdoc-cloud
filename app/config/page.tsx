@@ -56,24 +56,24 @@ export default function ConfigPage() {
 
   return (
     <AppShell>
-      <header className="bg-white border-b border-surface-200 px-4 lg:px-8 py-4 sticky top-0 z-20 shadow-sm">
-        <h1 className="text-xl font-black text-surface-800">Ajustes de notificaciones</h1>
-        <p className="text-xs text-surface-400">Ventanas de tiempo para avisar a los clientes</p>
+      <header className="bg-white dark:bg-surface-800 border-b border-surface-200 dark:border-surface-700 px-4 lg:px-8 py-4 sticky top-0 z-20 shadow-sm">
+        <h1 className="text-xl font-black text-surface-800 dark:text-white">Ajustes de notificaciones</h1>
+        <p className="text-xs text-surface-400 dark:text-surface-500">Ventanas de tiempo para avisar a los clientes</p>
       </header>
 
       <div className="px-4 lg:px-8 py-6 max-w-3xl mx-auto space-y-4">
-        <div className="bg-white rounded-2xl border border-surface-200 shadow-sm p-4 space-y-3">
-          <p className="text-sm text-surface-500">
-            Se avisa al cliente <strong className="text-surface-700">{'{dias_antes} días antes'}</strong> de la
-            fecha límite, con una tolerancia de <strong className="text-surface-700">{'{dias_despues} días'}</strong> después.
+        <div className="bg-white dark:bg-surface-800 rounded-2xl border border-surface-200 dark:border-surface-700 shadow-sm p-4 space-y-3">
+          <p className="text-sm text-surface-500 dark:text-surface-400">
+            Se avisa al cliente <strong className="text-surface-700 dark:text-surface-200">{'{dias_antes} días antes'}</strong> de la
+            fecha límite, con una tolerancia de <strong className="text-surface-700 dark:text-surface-200">{'{dias_despues} días'}</strong> después.
           </p>
 
           <div className="space-y-2">
             {configs.map(c => (
-              <div key={c.id} className="flex items-center gap-3 p-3 rounded-xl border border-surface-200">
+              <div key={c.id} className="flex items-center gap-3 p-3 rounded-xl border border-surface-200 dark:border-surface-700">
                 <div className="flex-1 min-w-0">
-                  <p className="font-bold text-sm text-surface-800">{c.label}</p>
-                  <p className="text-xs text-surface-400">{c.tipo}</p>
+                  <p className="font-bold text-sm text-surface-800 dark:text-white">{c.label}</p>
+                  <p className="text-xs text-surface-400 dark:text-surface-500">{c.tipo}</p>
                 </div>
 
                 {/* Presets */}
@@ -86,7 +86,7 @@ export default function ConfigPage() {
                       className={`px-2 py-1 rounded-lg text-[11px] font-semibold transition-colors ${
                         c.dias_antes === d
                           ? 'bg-brand-500 text-white'
-                          : 'bg-surface-100 text-surface-500 hover:bg-surface-200'
+                          : 'bg-surface-100 dark:bg-surface-800 text-surface-500 dark:text-surface-400 hover:bg-surface-200 dark:hover:bg-surface-700'
                       }`}
                     >
                       {d}d
@@ -94,23 +94,23 @@ export default function ConfigPage() {
                   ))}
                 </div>
 
-                <label className="flex items-center gap-1 text-xs text-surface-500">
+                <label className="flex items-center gap-1 text-xs text-surface-500 dark:text-surface-400">
                   antes
                   <input
                     type="number" min={0}
                     value={c.dias_antes}
                     onChange={e => patch(c.id, { dias_antes: Math.max(0, Number(e.target.value) || 0) })}
-                    className="w-16 px-2 py-1 rounded-lg text-sm border border-surface-200 focus:outline-none focus:border-brand-400"
+                    className="w-16 px-2 py-1 rounded-lg text-sm border border-surface-200 dark:border-surface-700 focus:outline-none focus:border-brand-400"
                   />
                 </label>
 
-                <label className="flex items-center gap-1 text-xs text-surface-500">
+                <label className="flex items-center gap-1 text-xs text-surface-500 dark:text-surface-400">
                   después
                   <input
                     type="number" min={0}
                     value={c.dias_despues}
                     onChange={e => patch(c.id, { dias_despues: Math.max(0, Number(e.target.value) || 0) })}
-                    className="w-14 px-2 py-1 rounded-lg text-sm border border-surface-200 focus:outline-none focus:border-brand-400"
+                    className="w-14 px-2 py-1 rounded-lg text-sm border border-surface-200 dark:border-surface-700 focus:outline-none focus:border-brand-400"
                   />
                 </label>
 
@@ -119,7 +119,7 @@ export default function ConfigPage() {
                   onClick={() => patch(c.id, { enabled: !c.enabled })}
                   disabled={savingId === c.id}
                   aria-label={c.enabled ? 'Desactivar' : 'Activar'}
-                  className={`w-11 h-6 rounded-full relative transition-colors ${c.enabled ? 'bg-brand-500' : 'bg-surface-300'}`}
+                  className={`w-11 h-6 rounded-full relative transition-colors ${c.enabled ? 'bg-brand-500' : 'bg-surface-300 dark:bg-surface-600'}`}
                 >
                   <span className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-all ${c.enabled ? 'left-[22px]' : 'left-0.5'}`} />
                 </button>
@@ -138,21 +138,21 @@ export default function ConfigPage() {
           {showNew ? (
             <div className="flex flex-wrap items-end gap-2 p-3 rounded-xl border border-brand-200 bg-brand-50">
               <label className="flex-1 min-w-32">
-                <span className="text-xs font-semibold text-surface-600">Tipo</span>
+                <span className="text-xs font-semibold text-surface-600 dark:text-surface-300">Tipo</span>
                 <select value={newTipo} onChange={e => setNewTipo(e.target.value)}
-                  className="mt-1 w-full px-3 py-2 rounded-xl text-sm border border-surface-200 bg-white">
+                  className="mt-1 w-full px-3 py-2 rounded-xl text-sm border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800">
                   {NOTIFICATION_TYPES.map(t => <option key={t.tipo} value={t.tipo}>{t.label}</option>)}
                 </select>
               </label>
               <label className="flex-1 min-w-32">
-                <span className="text-xs font-semibold text-surface-600">Etiqueta</span>
+                <span className="text-xs font-semibold text-surface-600 dark:text-surface-300">Etiqueta</span>
                 <input value={newLabel} onChange={e => setNewLabel(e.target.value)} placeholder="Ej: Control de peso"
-                  className="mt-1 w-full px-3 py-2 rounded-xl text-sm border border-surface-200 bg-white" />
+                  className="mt-1 w-full px-3 py-2 rounded-xl text-sm border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800" />
               </label>
               <label>
-                <span className="text-xs font-semibold text-surface-600">Días antes</span>
+                <span className="text-xs font-semibold text-surface-600 dark:text-surface-300">Días antes</span>
                 <input type="number" min={0} value={newDias} onChange={e => setNewDias(Math.max(0, Number(e.target.value) || 0))}
-                  className="mt-1 w-20 px-3 py-2 rounded-xl text-sm border border-surface-200 bg-white" />
+                  className="mt-1 w-20 px-3 py-2 rounded-xl text-sm border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800" />
               </label>
               <div className="flex gap-2">
                 <Button size="sm" onClick={handleCreate}>Agregar</Button>

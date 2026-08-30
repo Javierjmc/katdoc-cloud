@@ -21,11 +21,11 @@ function NewRecordContent() {
 
   return (
     <AppShell>
-      <header className="bg-white border-b border-surface-200 px-4 lg:px-8 py-4 sticky top-0 z-20 shadow-sm flex items-center gap-3">
-        <Link href={patientId ? `/patients/${patientId}` : '/patients'} className="p-2 rounded-xl text-surface-400 hover:text-surface-700 hover:bg-surface-100 transition-colors">‹</Link>
+      <header className="bg-white dark:bg-surface-800 border-b border-surface-200 dark:border-surface-700 px-4 lg:px-8 py-4 sticky top-0 z-20 shadow-sm flex items-center gap-3">
+        <Link href={patientId ? `/patients/${patientId}` : '/patients'} className="p-2 rounded-xl text-surface-400 dark:text-surface-500 hover:text-surface-700 dark:hover:text-surface-300 hover:bg-surface-100 dark:hover:bg-surface-800 transition-colors">‹</Link>
         <div>
-          <h1 className="text-lg font-black text-surface-800">Nueva Consulta</h1>
-          {patient && <p className="text-xs text-surface-400">Paciente: {patient.nombre}</p>}
+          <h1 className="text-lg font-black text-surface-800 dark:text-white">Nueva Consulta</h1>
+          {patient && <p className="text-xs text-surface-400 dark:text-surface-500">Paciente: {patient.nombre}</p>}
         </div>
       </header>
       <div className="max-w-2xl mx-auto px-4 py-4">

@@ -147,7 +147,7 @@ export default function PatientForm({ existingPatient, prefillTutor, onSuccess }
 
       {/* ── Foto de perfil ── */}
       <div className="flex flex-col items-center gap-2">
-        <div className="relative w-28 h-28 rounded-2xl overflow-hidden bg-surface-100 border-2 border-dashed border-surface-300">
+        <div className="relative w-28 h-28 rounded-2xl overflow-hidden bg-surface-100 dark:bg-surface-800 border-2 border-dashed border-surface-300">
           {photoPreview
             ? <Image src={photoPreview} alt="Vista previa" fill className="object-cover" />
             : <div className="flex items-center justify-center h-full text-4xl">🐾</div>
@@ -171,7 +171,7 @@ export default function PatientForm({ existingPatient, prefillTutor, onSuccess }
           onChange={handlePhotoChange} className="hidden" />
 
         {photoFile && !isEditing && (
-          <p className="text-xs text-surface-400">📸 {photoFile.name} — se subirá al guardar</p>
+          <p className="text-xs text-surface-400 dark:text-surface-500">📸 {photoFile.name} — se subirá al guardar</p>
         )}
       </div>
 
@@ -239,7 +239,7 @@ export default function PatientForm({ existingPatient, prefillTutor, onSuccess }
       </div>
 
       {/* ── Footer fijo ── */}
-      <div className="fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-surface-200 px-4 py-3 md:left-16 lg:left-64">
+      <div className="fixed bottom-0 left-0 right-0 z-40 bg-white dark:bg-surface-800 border-t border-surface-200 dark:border-surface-700 px-4 py-3 md:left-16 lg:left-64">
         <Button fullWidth size="lg" loading={saving} onClick={handleSave}>
           {isEditing ? '💾 Guardar Cambios' : '➕ Registrar Paciente'}
         </Button>
@@ -250,6 +250,6 @@ export default function PatientForm({ existingPatient, prefillTutor, onSuccess }
 
 function SectionHeader({ title }: { title: string }) {
   return (
-    <h2 className="text-sm font-black text-surface-700 pt-2 pb-1 border-b border-surface-200">{title}</h2>
+    <h2 className="text-sm font-black text-surface-700 dark:text-surface-200 pt-2 pb-1 border-b border-surface-200 dark:border-surface-700">{title}</h2>
   );
 }

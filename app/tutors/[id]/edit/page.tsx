@@ -45,11 +45,11 @@ export default function EditTutorPage() {
 
   return (
     <AppShell>
-      <header className="bg-white border-b border-surface-200 px-4 lg:px-8 py-4 sticky top-0 z-20 shadow-sm flex items-center gap-3">
-        <Link href="/tutors" className="p-2 rounded-xl text-surface-400 hover:text-surface-700 hover:bg-surface-100 transition-colors">‹</Link>
+      <header className="bg-white dark:bg-surface-800 border-b border-surface-200 dark:border-surface-700 px-4 lg:px-8 py-4 sticky top-0 z-20 shadow-sm flex items-center gap-3">
+        <Link href="/tutors" className="p-2 rounded-xl text-surface-400 dark:text-surface-500 hover:text-surface-700 dark:hover:text-surface-300 hover:bg-surface-100 dark:hover:bg-surface-800 transition-colors">‹</Link>
         <div>
-          <h1 className="text-lg font-black text-surface-800">Editar Propietario</h1>
-          <p className="text-xs text-surface-400">{tutor.nombre}</p>
+          <h1 className="text-lg font-black text-surface-800 dark:text-white">Editar Propietario</h1>
+          <p className="text-xs text-surface-400 dark:text-surface-500">{tutor.nombre}</p>
         </div>
       </header>
 
@@ -75,7 +75,7 @@ export default function EditTutorPage() {
           <Input value={tutor.direccion ?? ''} onChange={e => set('direccion', e.target.value)} placeholder="Urb. Las Palmas..." />
         </Field>
 
-        <div className="fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-surface-200 px-4 py-3 md:left-16 lg:left-64">
+        <div className="fixed bottom-0 left-0 right-0 z-40 bg-white dark:bg-surface-800 border-t border-surface-200 dark:border-surface-700 px-4 py-3 md:left-16 lg:left-64">
           <Button fullWidth size="lg" loading={saving} onClick={handleSave}>
             💾 Guardar Cambios
           </Button>

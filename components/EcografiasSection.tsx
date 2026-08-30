@@ -174,9 +174,9 @@ export default function EcografiasSection({ patientId }: { patientId: string }) 
   };
 
   return (
-    <div className="bg-white rounded-2xl border border-surface-200 shadow-sm overflow-hidden">
-      <div className="flex items-center justify-between px-4 py-3 border-b border-surface-100">
-        <h3 className="text-sm font-black text-surface-700">🫀 Ecografías</h3>
+    <div className="bg-white dark:bg-surface-800 rounded-2xl border border-surface-200 dark:border-surface-700 shadow-sm overflow-hidden">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-surface-100 dark:border-surface-800">
+        <h3 className="text-sm font-black text-surface-700 dark:text-surface-200">🫀 Ecografías</h3>
         <button onClick={openCreate} className="px-3 py-1.5 rounded-lg bg-brand-500 hover:bg-brand-600 text-white text-xs font-bold transition-colors">
           + Nueva ecografía
         </button>
@@ -184,22 +184,22 @@ export default function EcografiasSection({ patientId }: { patientId: string }) 
 
       <div className="p-4 space-y-2">
         {loading ? (
-          <div className="space-y-2">{[1, 2].map(i => <div key={i} className="h-14 rounded-xl bg-surface-100 animate-pulse" />)}</div>
+          <div className="space-y-2">{[1, 2].map(i => <div key={i} className="h-14 rounded-xl bg-surface-100 dark:bg-surface-800 animate-pulse" />)}</div>
         ) : ecografias.length === 0 ? (
           <EmptyState icon="🫀" title="Sin ecografías" subtitle="Registra estudios ecográficos con imágenes y reporte."
             action={<Button size="sm" onClick={openCreate}>Nueva ecografía</Button>} />
         ) : (
           ecografias.map(eco => (
-            <div key={eco.id} className="rounded-xl border border-surface-200 overflow-hidden">
+            <div key={eco.id} className="rounded-xl border border-surface-200 dark:border-surface-700 overflow-hidden">
               <button
                 onClick={() => setExpanded(expanded === eco.id ? null : eco.id)}
-                className="w-full flex items-center gap-3 p-3 text-left hover:bg-surface-50 transition-colors"
+                className="w-full flex items-center gap-3 p-3 text-left hover:bg-surface-50 dark:hover:bg-surface-800 transition-colors"
               >
                 <div className="flex-1 min-w-0">
-                  <p className="font-bold text-sm text-surface-800">
+                  <p className="font-bold text-sm text-surface-800 dark:text-white">
                     Ecografía {eco.organo ? `· ${eco.organo}` : ''}
                   </p>
-                  <p className="text-xs text-surface-500">
+                  <p className="text-xs text-surface-500 dark:text-surface-400">
                     {eco.fecha ? new Date(eco.fecha).toLocaleDateString('es-VE') : 'Sin fecha'}
                     {eco.imagenes.length > 0 && ` · ${eco.imagenes.length} imagen${eco.imagenes.length !== 1 ? 'es' : ''}`}
                   </p>
@@ -208,29 +208,29 @@ export default function EcografiasSection({ patientId }: { patientId: string }) 
               </button>
 
               {expanded === eco.id && (
-                <div className="border-t border-surface-100 px-3 pb-3 pt-2 space-y-2">
+                <div className="border-t border-surface-100 dark:border-surface-800 px-3 pb-3 pt-2 space-y-2">
                   {eco.imagenes.length > 0 && (
                     <div className="grid grid-cols-3 gap-2">
                       {eco.imagenes.map((img, i) => (
-                        <a key={i} href={img} target="_blank" rel="noreferrer" className="relative aspect-square rounded-lg overflow-hidden bg-surface-100">
+                        <a key={i} href={img} target="_blank" rel="noreferrer" className="relative aspect-square rounded-lg overflow-hidden bg-surface-100 dark:bg-surface-800">
                           <Image src={img} alt={`Ecografía ${i + 1}`} fill className="object-cover" />
                         </a>
                       ))}
                     </div>
                   )}
-                  {eco.hallazgos && <p className="text-xs text-surface-600 whitespace-pre-wrap"><span className="font-semibold">Hallazgos:</span> {eco.hallazgos}</p>}
-                  {eco.conclusiones && <p className="text-xs text-surface-600 whitespace-pre-wrap"><span className="font-semibold">Conclusiones:</span> {eco.conclusiones}</p>}
+                  {eco.hallazgos && <p className="text-xs text-surface-600 dark:text-surface-300 whitespace-pre-wrap"><span className="font-semibold">Hallazgos:</span> {eco.hallazgos}</p>}
+                  {eco.conclusiones && <p className="text-xs text-surface-600 dark:text-surface-300 whitespace-pre-wrap"><span className="font-semibold">Conclusiones:</span> {eco.conclusiones}</p>}
                   {eco.mediciones.length > 0 && (
                     <div className="flex flex-wrap gap-2">
                       {eco.mediciones.map((m, i) => (
-                        <span key={i} className="text-[11px] px-2 py-1 rounded-lg bg-surface-100 text-surface-600">
+                        <span key={i} className="text-[11px] px-2 py-1 rounded-lg bg-surface-100 dark:bg-surface-800 text-surface-600 dark:text-surface-300">
                           {m.nombre}: {m.valor}{m.unidad ? ` ${m.unidad}` : ''}
                         </span>
                       ))}
                     </div>
                   )}
                   <div className="flex justify-end gap-1 pt-1">
-                    <button onClick={() => openEdit(eco)} className="px-2.5 py-1 rounded-lg bg-surface-100 hover:bg-surface-200 text-surface-600 text-xs font-semibold">✏️ Editar</button>
+                    <button onClick={() => openEdit(eco)} className="px-2.5 py-1 rounded-lg bg-surface-100 dark:bg-surface-800 hover:bg-surface-200 dark:hover:bg-surface-700 text-surface-600 dark:text-surface-300 text-xs font-semibold">✏️ Editar</button>
                     <button onClick={() => setToDelete(eco)} className="px-2.5 py-1 rounded-lg bg-red-50 hover:bg-red-100 text-red-500 text-xs font-semibold">🗑️</button>
                   </div>
                 </div>
@@ -243,8 +243,8 @@ export default function EcografiasSection({ patientId }: { patientId: string }) 
       {/* Editor */}
       {editor && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={() => !saving && setEditor(null)}>
-          <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-3xl bg-white border border-surface-200 shadow-2xl p-6 space-y-3" onClick={e => e.stopPropagation()}>
-            <h3 className="text-base font-bold text-surface-800">{editor.mode === 'create' ? 'Nueva ecografía' : 'Editar ecografía'}</h3>
+          <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-3xl bg-white dark:bg-surface-800 border border-surface-200 dark:border-surface-700 shadow-2xl p-6 space-y-3" onClick={e => e.stopPropagation()}>
+            <h3 className="text-base font-bold text-surface-800 dark:text-white">{editor.mode === 'create' ? 'Nueva ecografía' : 'Editar ecografía'}</h3>
 
             <div className="grid grid-cols-2 gap-3">
               <Field label="Fecha">
@@ -265,11 +265,11 @@ export default function EcografiasSection({ patientId }: { patientId: string }) 
             {/* Mediciones */}
             <div>
               <div className="flex items-center justify-between mb-2">
-                <p className="text-xs font-black text-surface-600 uppercase tracking-wide">Mediciones</p>
+                <p className="text-xs font-black text-surface-600 dark:text-surface-300 uppercase tracking-wide">Mediciones</p>
                 <button onClick={addMedicion} className="text-xs font-bold text-brand-500 hover:text-brand-600">+ Agregar</button>
               </div>
               {editor.mediciones.length === 0 ? (
-                <p className="text-xs text-surface-400 bg-surface-50 rounded-xl p-3">Sin mediciones.</p>
+                <p className="text-xs text-surface-400 dark:text-surface-500 bg-surface-50 dark:bg-surface-900 rounded-xl p-3">Sin mediciones.</p>
               ) : (
                 <div className="space-y-1.5">
                   {editor.mediciones.map((m, idx) => (
@@ -287,7 +287,7 @@ export default function EcografiasSection({ patientId }: { patientId: string }) 
             {/* Imágenes */}
             <div>
               <div className="flex items-center justify-between mb-2">
-                <p className="text-xs font-black text-surface-600 uppercase tracking-wide">Imágenes</p>
+                <p className="text-xs font-black text-surface-600 dark:text-surface-300 uppercase tracking-wide">Imágenes</p>
                 <label className="text-xs font-bold text-brand-500 hover:text-brand-600 cursor-pointer">
                   + Subir imágenes
                   <input type="file" className="hidden" accept="image/*" multiple onChange={e => handleImages(e.target.files)} />
@@ -296,13 +296,13 @@ export default function EcografiasSection({ patientId }: { patientId: string }) 
               {(editor.imagenes.length > 0 || editor.pendingImages.length > 0) && (
                 <div className="grid grid-cols-3 gap-2">
                   {editor.imagenes.map((img, i) => (
-                    <div key={`s-${i}`} className="relative aspect-square rounded-lg overflow-hidden bg-surface-100">
+                    <div key={`s-${i}`} className="relative aspect-square rounded-lg overflow-hidden bg-surface-100 dark:bg-surface-800">
                       <Image src={img} alt={`Imagen ${i + 1}`} fill className="object-cover" />
                       <button onClick={() => removeSavedImage(i)} className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/60 text-white text-[10px]" aria-label="Quitar">✕</button>
                     </div>
                   ))}
                   {editor.pendingImages.map((f, i) => (
-                    <div key={`p-${i}`} className="relative aspect-square rounded-lg overflow-hidden bg-surface-100">
+                    <div key={`p-${i}`} className="relative aspect-square rounded-lg overflow-hidden bg-surface-100 dark:bg-surface-800">
                       <Image src={URL.createObjectURL(f)} alt={`Nueva ${i + 1}`} fill className="object-cover" />
                       <button onClick={() => removePendingImage(i)} className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/60 text-white text-[10px]" aria-label="Quitar">✕</button>
                     </div>

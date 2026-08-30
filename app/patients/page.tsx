@@ -61,16 +61,16 @@ export default function PatientsPage() {
 
   return (
     <AppShell>
-      <header className="bg-white border-b border-surface-200 px-4 lg:px-8 py-4 sticky top-0 z-20 shadow-sm flex items-center justify-between">
+      <header className="bg-white dark:bg-surface-800 border-b border-surface-200 dark:border-surface-700 px-4 lg:px-8 py-4 sticky top-0 z-20 shadow-sm flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-black text-surface-800">Pacientes</h1>
-          <p className="text-xs text-surface-400">{loading ? '...' : `${tabPatients.length} registrados`}</p>
+          <h1 className="text-xl font-black text-surface-800 dark:text-white">Pacientes</h1>
+          <p className="text-xs text-surface-400 dark:text-surface-500">{loading ? '...' : `${tabPatients.length} registrados`}</p>
         </div>
         <div className="flex items-center gap-2">
           {/* Toggle vista */}
-          <div className="hidden sm:flex bg-surface-100 rounded-xl p-1 gap-1">
-            <button onClick={() => setView('grid')} className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${view === 'grid' ? 'bg-white shadow-sm text-brand-600' : 'text-surface-500'}`}>⊞ Grid</button>
-            <button onClick={() => setView('list')} className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${view === 'list' ? 'bg-white shadow-sm text-brand-600' : 'text-surface-500'}`}>☰ Lista</button>
+          <div className="hidden sm:flex bg-surface-100 dark:bg-surface-800 rounded-xl p-1 gap-1">
+            <button onClick={() => setView('grid')} className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${view === 'grid' ? 'bg-white dark:bg-surface-800 shadow-sm text-brand-600' : 'text-surface-500 dark:text-surface-400'}`}>⊞ Grid</button>
+            <button onClick={() => setView('list')} className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${view === 'list' ? 'bg-white dark:bg-surface-800 shadow-sm text-brand-600' : 'text-surface-500 dark:text-surface-400'}`}>☰ Lista</button>
           </div>
           <Link href="/patients/new" className="px-4 py-2 rounded-xl bg-brand-500 hover:bg-brand-600 text-white text-sm font-bold transition-colors shadow-md shadow-brand-500/20">
             ➕ Nuevo
@@ -90,36 +90,36 @@ export default function PatientsPage() {
         </div>
 
         {/* Filtros */}
-        <div className="bg-white rounded-2xl border border-surface-200 p-4 shadow-sm space-y-3">
+        <div className="bg-white dark:bg-surface-800 rounded-2xl border border-surface-200 dark:border-surface-700 p-4 shadow-sm space-y-3">
           <div className="relative">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-surface-400">🔍</span>
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-surface-400 dark:text-surface-500">🔍</span>
             <input
               type="search" placeholder="Buscar por nombre, raza, tutor..."
               value={search} onChange={e => setSearch(e.target.value)}
-              className="w-full pl-9 pr-4 py-2.5 rounded-xl bg-surface-50 border border-surface-200 text-surface-800 placeholder:text-surface-400 focus:outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-400/20 text-sm"
+              className="w-full pl-9 pr-4 py-2.5 rounded-xl bg-surface-50 dark:bg-surface-900 border border-surface-200 dark:border-surface-700 text-surface-800 dark:text-white placeholder:text-surface-400 dark:placeholder:text-surface-500 focus:outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-400/20 text-sm"
             />
           </div>
           <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
             {['', ...ESPECIES].map(e => (
               <button key={e} onClick={() => setFilterEspecie(e)}
-                className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all ${filterEspecie === e ? 'bg-brand-500 text-white' : 'bg-surface-100 text-surface-600 hover:bg-surface-200'}`}>
+                className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all ${filterEspecie === e ? 'bg-brand-500 text-white' : 'bg-surface-100 dark:bg-surface-800 text-surface-600 dark:text-surface-300 hover:bg-surface-200 dark:hover:bg-surface-700'}`}>
                 {e || 'Todos'}
               </button>
             ))}
           </div>
         </div>
 
-        <p className="text-sm text-surface-500 font-medium">{loading ? 'Cargando...' : `${filtered.length} resultado${filtered.length !== 1 ? 's' : ''}`}</p>
+        <p className="text-sm text-surface-500 dark:text-surface-400 font-medium">{loading ? 'Cargando...' : `${filtered.length} resultado${filtered.length !== 1 ? 's' : ''}`}</p>
 
         {loading ? (
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {[1,2,3,4,5,6].map(i => <div key={i} className="h-48 rounded-2xl bg-surface-200 animate-pulse" />)}
+            {[1,2,3,4,5,6].map(i => <div key={i} className="h-48 rounded-2xl bg-surface-200 dark:bg-surface-700 animate-pulse" />)}
           </div>
         ) : view === 'grid' ? (
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {visible.map(p => (
               <Link key={p.id} href={`/patients/${p.id}`}
-                className="bg-white rounded-2xl border border-surface-200 hover:border-brand-400 hover:shadow-md hover:shadow-brand-500/10 transition-all group overflow-hidden"
+                className="bg-white dark:bg-surface-800 rounded-2xl border border-surface-200 dark:border-surface-700 hover:border-brand-400 hover:shadow-md hover:shadow-brand-500/10 transition-all group overflow-hidden"
               >
                 {/* Foto */}
                 <div className="h-36 bg-brand-50 flex items-center justify-center relative overflow-hidden">
@@ -136,10 +136,10 @@ export default function PatientsPage() {
                 </div>
                 {/* Info */}
                 <div className="p-3">
-                  <h3 className="font-black text-surface-800 group-hover:text-brand-600 transition-colors">{p.nombre}</h3>
-                  <p className="text-xs text-surface-400">{p.raza ?? 'Sin raza'} · {p.sexo ?? '—'}</p>
-                  <p className="text-xs text-surface-500 mt-1.5 truncate">👤 {p.tutor?.nombre}</p>
-                  {p.fecha_nacimiento && <p className="text-xs text-surface-400">📅 {calcularEdad(p.fecha_nacimiento)}</p>}
+                  <h3 className="font-black text-surface-800 dark:text-white group-hover:text-brand-600 transition-colors">{p.nombre}</h3>
+                  <p className="text-xs text-surface-400 dark:text-surface-500">{p.raza ?? 'Sin raza'} · {p.sexo ?? '—'}</p>
+                  <p className="text-xs text-surface-500 dark:text-surface-400 mt-1.5 truncate">👤 {p.tutor?.nombre}</p>
+                  {p.fecha_nacimiento && <p className="text-xs text-surface-400 dark:text-surface-500">📅 {calcularEdad(p.fecha_nacimiento)}</p>}
                 </div>
               </Link>
             ))}
@@ -148,21 +148,21 @@ export default function PatientsPage() {
           <div className="space-y-2">
             {visible.map(p => (
               <Link key={p.id} href={`/patients/${p.id}`}
-                className="flex items-center gap-4 bg-white rounded-2xl border border-surface-200 hover:border-brand-400 p-3 transition-all group"
+                className="flex items-center gap-4 bg-white dark:bg-surface-800 rounded-2xl border border-surface-200 dark:border-surface-700 hover:border-brand-400 p-3 transition-all group"
               >
                 <div className="w-14 h-14 rounded-xl overflow-hidden bg-brand-50 shrink-0 flex items-center justify-center">
                   {p.photo_url ? <Image src={p.photo_url} alt={p.nombre} width={56} height={56} className="object-cover w-full h-full" /> : <span className="text-2xl">{emoji[p.especie] ?? '🐾'}</span>}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <h3 className="font-bold text-surface-800 group-hover:text-brand-600 transition-colors">{p.nombre}</h3>
+                    <h3 className="font-bold text-surface-800 dark:text-white group-hover:text-brand-600 transition-colors">{p.nombre}</h3>
                     <span className="text-xs px-2 py-0.5 rounded-full bg-brand-50 text-brand-600 border border-brand-200 font-semibold">{p.especie}</span>
                     {p.active === false && (
-                      <span className="text-xs px-2 py-0.5 rounded-full bg-surface-100 text-surface-500 border border-surface-200 font-semibold">Inactivo</span>
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-surface-100 dark:bg-surface-800 text-surface-500 dark:text-surface-400 border border-surface-200 dark:border-surface-700 font-semibold">Inactivo</span>
                     )}
                   </div>
-                  <p className="text-xs text-surface-500 truncate">👤 {p.tutor?.nombre} · {p.tutor?.cedula}</p>
-                  <p className="text-xs text-surface-400">{p.raza}{p.fecha_nacimiento ? ` · ${calcularEdad(p.fecha_nacimiento)}` : ''}</p>
+                  <p className="text-xs text-surface-500 dark:text-surface-400 truncate">👤 {p.tutor?.nombre} · {p.tutor?.cedula}</p>
+                  <p className="text-xs text-surface-400 dark:text-surface-500">{p.raza}{p.fecha_nacimiento ? ` · ${calcularEdad(p.fecha_nacimiento)}` : ''}</p>
                 </div>
                 <span className="text-surface-300 group-hover:text-brand-400">›</span>
               </Link>
@@ -184,11 +184,11 @@ function TabButton({ active, onClick, label, count }: {
       className={`px-4 py-2 rounded-xl text-sm font-bold transition-all flex items-center gap-2 ${
         active
           ? 'bg-brand-500 text-white shadow-md shadow-brand-500/20'
-          : 'bg-white border border-surface-200 text-surface-600 hover:border-brand-400'
+          : 'bg-white dark:bg-surface-800 border border-surface-200 dark:border-surface-700 text-surface-600 dark:text-surface-300 hover:border-brand-400'
       }`}
     >
       {label}
-      <span className={`text-xs px-1.5 py-0.5 rounded-full ${active ? 'bg-white/25' : 'bg-surface-100 text-surface-500'}`}>
+      <span className={`text-xs px-1.5 py-0.5 rounded-full ${active ? 'bg-white/25' : 'bg-surface-100 dark:bg-surface-800 text-surface-500 dark:text-surface-400'}`}>
         {count}
       </span>
     </button>

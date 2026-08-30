@@ -84,9 +84,9 @@ export default function VaccinationsSection({ patientId }: { patientId: string }
   };
 
   return (
-    <div className="bg-white rounded-2xl border border-surface-200 shadow-sm overflow-hidden">
-      <div className="flex items-center justify-between px-4 py-3 border-b border-surface-100">
-        <h3 className="text-sm font-black text-surface-700">💉 Vacunas</h3>
+    <div className="bg-white dark:bg-surface-800 rounded-2xl border border-surface-200 dark:border-surface-700 shadow-sm overflow-hidden">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-surface-100 dark:border-surface-800">
+        <h3 className="text-sm font-black text-surface-700 dark:text-surface-200">💉 Vacunas</h3>
         <button
           onClick={openCreate}
           className="px-3 py-1.5 rounded-lg bg-brand-500 hover:bg-brand-600 text-white text-xs font-bold transition-colors"
@@ -97,28 +97,28 @@ export default function VaccinationsSection({ patientId }: { patientId: string }
 
       <div className="p-4 space-y-2">
         {loading ? (
-          <div className="space-y-2">{[1, 2].map(i => <div key={i} className="h-14 rounded-xl bg-surface-100 animate-pulse" />)}</div>
+          <div className="space-y-2">{[1, 2].map(i => <div key={i} className="h-14 rounded-xl bg-surface-100 dark:bg-surface-800 animate-pulse" />)}</div>
         ) : vaccinations.length === 0 ? (
           <EmptyState icon="💉" title="Sin vacunas" subtitle="Registra la primera vacuna del paciente."
             action={<Button size="sm" onClick={openCreate}>Registrar vacuna</Button>} />
         ) : (
           vaccinations.map(v => (
-            <div key={v.id} className="flex items-center gap-3 p-3 rounded-xl border border-surface-200 hover:border-brand-400 transition-colors">
+            <div key={v.id} className="flex items-center gap-3 p-3 rounded-xl border border-surface-200 dark:border-surface-700 hover:border-brand-400 transition-colors">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <p className="font-bold text-sm text-surface-800">{v.vacuna}</p>
+                  <p className="font-bold text-sm text-surface-800 dark:text-white">{v.vacuna}</p>
                   {statusBadge(v)}
                 </div>
-                <p className="text-xs text-surface-500 mt-0.5">
+                <p className="text-xs text-surface-500 dark:text-surface-400 mt-0.5">
                   Aplicada: {v.fecha_aplicacion ? formatearFecha(v.fecha_aplicacion) : '—'}
                   {v.fecha_proxima_dosis && <> · Próxima: {formatearFecha(v.fecha_proxima_dosis)}</>}
                 </p>
                 {(v.marca || v.lote) && (
-                  <p className="text-xs text-surface-400 mt-0.5">{v.marca}{v.marca && v.lote ? ' · ' : ''}{v.lote}</p>
+                  <p className="text-xs text-surface-400 dark:text-surface-500 mt-0.5">{v.marca}{v.marca && v.lote ? ' · ' : ''}{v.lote}</p>
                 )}
               </div>
               <div className="flex gap-1 shrink-0">
-                <button onClick={() => openEdit(v)} className="w-8 h-8 rounded-lg bg-surface-100 hover:bg-surface-200 text-surface-600 text-xs" aria-label="Editar">✏️</button>
+                <button onClick={() => openEdit(v)} className="w-8 h-8 rounded-lg bg-surface-100 dark:bg-surface-800 hover:bg-surface-200 dark:hover:bg-surface-700 text-surface-600 dark:text-surface-300 text-xs" aria-label="Editar">✏️</button>
                 <button onClick={() => setToDelete(v)} className="w-8 h-8 rounded-lg bg-red-50 hover:bg-red-100 text-red-500 text-xs" aria-label="Eliminar">🗑️</button>
               </div>
             </div>
@@ -129,8 +129,8 @@ export default function VaccinationsSection({ patientId }: { patientId: string }
       {/* Editor */}
       {editor && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={() => !saving && setEditor(null)}>
-          <div className="w-full max-w-lg rounded-3xl bg-white border border-surface-200 shadow-2xl p-6 space-y-3" onClick={e => e.stopPropagation()}>
-            <h3 className="text-base font-bold text-surface-800">{editor.mode === 'create' ? 'Registrar vacuna' : 'Editar vacuna'}</h3>
+          <div className="w-full max-w-lg rounded-3xl bg-white dark:bg-surface-800 border border-surface-200 dark:border-surface-700 shadow-2xl p-6 space-y-3" onClick={e => e.stopPropagation()}>
+            <h3 className="text-base font-bold text-surface-800 dark:text-white">{editor.mode === 'create' ? 'Registrar vacuna' : 'Editar vacuna'}</h3>
 
             <Field label="Vacuna" required error={fieldErrors.vacuna}>
               <Input value={editor.data.vacuna} onChange={e => setField('vacuna', e.target.value)} placeholder="Ej: Nobivac DHPPi" />

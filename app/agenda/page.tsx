@@ -116,12 +116,12 @@ export default function AgendaPage() {
 
   return (
     <AppShell>
-      <header className="bg-white border-b border-surface-200 px-4 lg:px-8 py-4 sticky top-0 z-20 shadow-sm flex items-center justify-between">
+      <header className="bg-white dark:bg-surface-800 border-b border-surface-200 dark:border-surface-700 px-4 lg:px-8 py-4 sticky top-0 z-20 shadow-sm flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-black text-surface-800">Agenda</h1>
-          <p className="text-xs text-surface-400">Citas, vacunas y controles del mes</p>
+          <h1 className="text-xl font-black text-surface-800 dark:text-white">Agenda</h1>
+          <p className="text-xs text-surface-400 dark:text-surface-500">Citas, vacunas y controles del mes</p>
         </div>
-        <button onClick={goToday} className="px-4 py-2 rounded-xl bg-surface-100 hover:bg-surface-200 text-surface-600 text-sm font-bold transition-colors">
+        <button onClick={goToday} className="px-4 py-2 rounded-xl bg-surface-100 dark:bg-surface-800 hover:bg-surface-200 dark:hover:bg-surface-700 text-surface-600 dark:text-surface-300 text-sm font-bold transition-colors">
           Hoy
         </button>
       </header>
@@ -131,12 +131,12 @@ export default function AgendaPage() {
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <button onClick={() => { setMonth(m => m === 0 ? 11 : m - 1); setYear(y => (month === 0 ? y - 1 : y)); }}
-              className="w-9 h-9 rounded-xl bg-white border border-surface-200 hover:bg-surface-50 text-surface-600 font-bold">‹</button>
+              className="w-9 h-9 rounded-xl bg-white dark:bg-surface-800 border border-surface-200 dark:border-surface-700 hover:bg-surface-50 dark:hover:bg-surface-800 text-surface-600 dark:text-surface-300 font-bold">‹</button>
             <button onClick={() => { setMonth(m => m === 11 ? 0 : m + 1); setYear(y => (month === 11 ? y + 1 : y)); }}
-              className="w-9 h-9 rounded-xl bg-white border border-surface-200 hover:bg-surface-50 text-surface-600 font-bold">›</button>
-            <h2 className="text-lg font-black text-surface-800 ml-2">{MONTHS[month]} {year}</h2>
+              className="w-9 h-9 rounded-xl bg-white dark:bg-surface-800 border border-surface-200 dark:border-surface-700 hover:bg-surface-50 dark:hover:bg-surface-800 text-surface-600 dark:text-surface-300 font-bold">›</button>
+            <h2 className="text-lg font-black text-surface-800 dark:text-white ml-2">{MONTHS[month]} {year}</h2>
           </div>
-          <div className="hidden sm:flex gap-3 text-xs text-surface-500">
+          <div className="hidden sm:flex gap-3 text-xs text-surface-500 dark:text-surface-400">
             {(Object.keys(TYPE_META) as CalendarEvent['type'][]).map(t => (
               <span key={t} className="flex items-center gap-1.5">
                 <span className={`w-2 h-2 rounded-full ${TYPE_META[t].dot}`} /> {TYPE_META[t].label}
@@ -147,15 +147,15 @@ export default function AgendaPage() {
 
         {/* Grid del mes */}
         {loading ? <PageLoader /> : (
-          <div className="bg-white rounded-2xl border border-surface-200 shadow-sm overflow-hidden">
-            <div className="grid grid-cols-7 bg-surface-50 border-b border-surface-200">
+          <div className="bg-white dark:bg-surface-800 rounded-2xl border border-surface-200 dark:border-surface-700 shadow-sm overflow-hidden">
+            <div className="grid grid-cols-7 bg-surface-50 dark:bg-surface-900 border-b border-surface-200 dark:border-surface-700">
               {WEEKDAYS.map(d => (
-                <div key={d} className="py-2 text-center text-[11px] font-black uppercase tracking-wide text-surface-400">{d}</div>
+                <div key={d} className="py-2 text-center text-[11px] font-black uppercase tracking-wide text-surface-400 dark:text-surface-500">{d}</div>
               ))}
             </div>
             <div className="grid grid-cols-7">
               {cells.map((date, i) => {
-                if (!date) return <div key={`empty-${i}`} className="min-h-[72px] sm:min-h-[104px] border-b border-r border-surface-100 bg-surface-50/50" />;
+                if (!date) return <div key={`empty-${i}`} className="min-h-[72px] sm:min-h-[104px] border-b border-r border-surface-100 dark:border-surface-800 bg-surface-50/50 dark:bg-surface-800/50" />;
                 const dayEvents = byDay.get(date) ?? [];
                 const isToday = date === todayStr;
                 const isSelected = date === selected;
@@ -163,9 +163,9 @@ export default function AgendaPage() {
                   <button
                     key={date}
                     onClick={() => setSelected(date)}
-                    className={`min-h-[72px] sm:min-h-[104px] p-1.5 sm:p-2 text-left border-b border-r border-surface-100 transition-colors hover:bg-brand-50/40 ${isSelected ? 'bg-brand-50 ring-2 ring-inset ring-brand-400' : ''}`}
+                    className={`min-h-[72px] sm:min-h-[104px] p-1.5 sm:p-2 text-left border-b border-r border-surface-100 dark:border-surface-800 transition-colors hover:bg-brand-50/40 ${isSelected ? 'bg-brand-50 ring-2 ring-inset ring-brand-400' : ''}`}
                   >
-                    <span className={`inline-flex items-center justify-center w-6 h-6 text-xs font-bold rounded-full ${isToday ? 'bg-brand-500 text-white' : 'text-surface-600'}`}>
+                    <span className={`inline-flex items-center justify-center w-6 h-6 text-xs font-bold rounded-full ${isToday ? 'bg-brand-500 text-white' : 'text-surface-600 dark:text-surface-300'}`}>
                       {Number(date.slice(8))}
                     </span>
                     <div className="mt-1 space-y-1">
@@ -176,10 +176,10 @@ export default function AgendaPage() {
                         </div>
                       ))}
                       {dayEvents.length > 3 && (
-                        <p className="hidden sm:block text-[10px] font-bold text-surface-400 px-1">+{dayEvents.length - 3} más</p>
+                        <p className="hidden sm:block text-[10px] font-bold text-surface-400 dark:text-surface-500 px-1">+{dayEvents.length - 3} más</p>
                       )}
                       {dayEvents.length > 0 && (
-                        <p className="sm:hidden text-[10px] font-bold text-surface-500 px-1">{dayEvents.length} ▲</p>
+                        <p className="sm:hidden text-[10px] font-bold text-surface-500 dark:text-surface-400 px-1">{dayEvents.length} ▲</p>
                       )}
                     </div>
                   </button>
@@ -191,28 +191,28 @@ export default function AgendaPage() {
 
         {/* Detalle del día */}
         {selected && (
-          <div className="mt-4 bg-white rounded-2xl border border-surface-200 shadow-sm p-4">
+          <div className="mt-4 bg-white dark:bg-surface-800 rounded-2xl border border-surface-200 dark:border-surface-700 shadow-sm p-4">
             <div className="flex items-center justify-between mb-3">
-              <h3 className="font-black text-surface-800 text-sm">
+              <h3 className="font-black text-surface-800 dark:text-white text-sm">
                 📅 {new Date(selected + 'T12:00:00').toLocaleDateString('es-VE', { weekday: 'long', day: 'numeric', month: 'long' })}
               </h3>
               <Button size="sm" onClick={() => openCreate(selected)}>+ Agendar cita</Button>
             </div>
 
             {selectedEvents.length === 0 ? (
-              <p className="text-sm text-surface-400 py-4 text-center">Sin eventos este día.</p>
+              <p className="text-sm text-surface-400 dark:text-surface-500 py-4 text-center">Sin eventos este día.</p>
             ) : (
               <div className="space-y-2">
                 {selectedEvents.map(e => (
-                  <div key={`${e.type}-${e.id}`} className="flex items-start gap-3 p-3 rounded-xl border border-surface-200">
+                  <div key={`${e.type}-${e.id}`} className="flex items-start gap-3 p-3 rounded-xl border border-surface-200 dark:border-surface-700">
                     <div className={`mt-1 w-2.5 h-2.5 rounded-full shrink-0 ${TYPE_META[e.type].dot}`} />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <p className="font-bold text-sm text-surface-800">{e.titulo}</p>
+                        <p className="font-bold text-sm text-surface-800 dark:text-white">{e.titulo}</p>
                         <span className={`text-[10px] px-2 py-0.5 rounded-full border font-bold ${TYPE_META[e.type].badge}`}>{TYPE_META[e.type].label}</span>
-                        {e.estado && <span className="text-[10px] px-2 py-0.5 rounded-full bg-surface-100 text-surface-500 border border-surface-200 font-bold capitalize">{e.estado}</span>}
+                        {e.estado && <span className="text-[10px] px-2 py-0.5 rounded-full bg-surface-100 dark:bg-surface-800 text-surface-500 dark:text-surface-400 border border-surface-200 dark:border-surface-700 font-bold capitalize">{e.estado}</span>}
                       </div>
-                      <p className="text-xs text-surface-500 mt-0.5">
+                      <p className="text-xs text-surface-500 dark:text-surface-400 mt-0.5">
                         🐾 <Link href={`/patients/${e.patientId}`} className="hover:text-brand-500">{e.patientNombre}</Link>
                         {e.hora && <> · 🕐 {e.hora}</>}
                         {e.subtitulo && <> · {e.subtitulo}</>}
@@ -229,9 +229,9 @@ export default function AgendaPage() {
       {/* Modal: agendar cita desde el calendario */}
       {showCreate && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={() => !saving && setShowCreate(false)}>
-          <div className="w-full max-w-lg rounded-3xl bg-white border border-surface-200 shadow-2xl p-6 space-y-3" onClick={e => e.stopPropagation()}>
-            <h3 className="text-base font-bold text-surface-800">Agendar cita</h3>
-            <p className="text-xs text-surface-400">📅 {selected ? new Date(selected + 'T12:00:00').toLocaleDateString('es-VE', { weekday: 'long', day: 'numeric', month: 'long' }) : ''}</p>
+          <div className="w-full max-w-lg rounded-3xl bg-white dark:bg-surface-800 border border-surface-200 dark:border-surface-700 shadow-2xl p-6 space-y-3" onClick={e => e.stopPropagation()}>
+            <h3 className="text-base font-bold text-surface-800 dark:text-white">Agendar cita</h3>
+            <p className="text-xs text-surface-400 dark:text-surface-500">📅 {selected ? new Date(selected + 'T12:00:00').toLocaleDateString('es-VE', { weekday: 'long', day: 'numeric', month: 'long' }) : ''}</p>
 
             <Field label="Paciente" required error={fieldErrors.patient_id}>
               <Select

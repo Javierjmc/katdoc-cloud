@@ -50,7 +50,7 @@ export default function ReportePage() {
   if (loading) return <PageLoader />;
   if (!patient) return (
     <AppShell>
-      <div className="p-8 text-center text-surface-500">Paciente no encontrado</div>
+      <div className="p-8 text-center text-surface-500 dark:text-surface-400">Paciente no encontrado</div>
     </AppShell>
   );
 
@@ -60,12 +60,12 @@ export default function ReportePage() {
   return (
     <AppShell>
       {/* Cabecera (no se imprime) */}
-      <header className="no-print bg-white border-b border-surface-200 px-4 lg:px-8 py-4 sticky top-0 z-20 shadow-sm flex items-center justify-between">
+      <header className="no-print bg-white dark:bg-surface-800 border-b border-surface-200 dark:border-surface-700 px-4 lg:px-8 py-4 sticky top-0 z-20 shadow-sm flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Link href={`/patients/${id}`} className="p-2 rounded-xl text-surface-400 hover:text-surface-700 hover:bg-surface-100 transition-colors">‹</Link>
+          <Link href={`/patients/${id}`} className="p-2 rounded-xl text-surface-400 dark:text-surface-500 hover:text-surface-700 dark:hover:text-surface-300 hover:bg-surface-100 dark:hover:bg-surface-800 transition-colors">‹</Link>
           <div>
-            <h1 className="text-lg font-black text-surface-800">Reporte del paciente</h1>
-            <p className="text-xs text-surface-400">{patient.nombre}</p>
+            <h1 className="text-lg font-black text-surface-800 dark:text-white">Reporte del paciente</h1>
+            <p className="text-xs text-surface-400 dark:text-surface-500">{patient.nombre}</p>
           </div>
         </div>
         <Button onClick={() => window.print()}>🖨 Imprimir</Button>
@@ -73,8 +73,8 @@ export default function ReportePage() {
 
       <div className="px-4 lg:px-8 py-6 max-w-4xl mx-auto space-y-4">
         {/* Configuración (no se imprime) */}
-        <div className="no-print bg-white rounded-2xl border border-surface-200 shadow-sm p-4 space-y-3">
-          <p className="text-xs font-black text-surface-600 uppercase tracking-wide">Secciones del reporte</p>
+        <div className="no-print bg-white dark:bg-surface-800 rounded-2xl border border-surface-200 dark:border-surface-700 shadow-sm p-4 space-y-3">
+          <p className="text-xs font-black text-surface-600 dark:text-surface-300 uppercase tracking-wide">Secciones del reporte</p>
           <div className="flex flex-wrap gap-2">
             {ALL_SECTIONS.map(s => (
               <button
@@ -83,7 +83,7 @@ export default function ReportePage() {
                 className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-colors ${
                   sections[s]
                     ? 'bg-brand-500 text-white'
-                    : 'bg-surface-100 text-surface-500 hover:bg-surface-200'
+                    : 'bg-surface-100 dark:bg-surface-800 text-surface-500 dark:text-surface-400 hover:bg-surface-200 dark:hover:bg-surface-700'
                 }`}
               >
                 {SECTION_LABELS[s]}
@@ -92,36 +92,36 @@ export default function ReportePage() {
           </div>
           <div className="grid sm:grid-cols-2 gap-3">
             <label className="block">
-              <span className="text-xs font-semibold text-surface-500">Título del reporte</span>
+              <span className="text-xs font-semibold text-surface-500 dark:text-surface-400">Título del reporte</span>
               <input value={titulo} onChange={e => setTitulo(e.target.value)}
-                className="mt-1 w-full px-3 py-2 rounded-xl text-sm border border-surface-200 focus:outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-400/20" />
+                className="mt-1 w-full px-3 py-2 rounded-xl text-sm border border-surface-200 dark:border-surface-700 focus:outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-400/20" />
             </label>
             <label className="block">
-              <span className="text-xs font-semibold text-surface-500">Nota general</span>
+              <span className="text-xs font-semibold text-surface-500 dark:text-surface-400">Nota general</span>
               <textarea value={notaGeneral} onChange={e => setNotaGeneral(e.target.value)} rows={1}
-                className="mt-1 w-full px-3 py-2 rounded-xl text-sm border border-surface-200 focus:outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-400/20 resize-none"
+                className="mt-1 w-full px-3 py-2 rounded-xl text-sm border border-surface-200 dark:border-surface-700 focus:outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-400/20 resize-none"
                 placeholder="Observación que quieras incluir en el reporte..." />
             </label>
           </div>
         </div>
 
         {!hasAny && (
-          <div className="no-print text-center py-10 text-surface-500">Activa al menos una sección para generar el reporte.</div>
+          <div className="no-print text-center py-10 text-surface-500 dark:text-surface-400">Activa al menos una sección para generar el reporte.</div>
         )}
 
         {/* ── Reporte imprimible ── */}
         {hasAny && (
-          <div className="reporte-print bg-white rounded-2xl border border-surface-200 shadow-sm p-6">
+          <div className="reporte-print bg-white dark:bg-surface-800 rounded-2xl border border-surface-200 dark:border-surface-700 shadow-sm p-6">
             {/* Encabezado */}
             <div className="text-center border-b-2 border-surface-300 pb-4 mb-4">
               <p className="text-2xl font-black">🐾 KATDOC</p>
               <p className="text-lg font-bold mt-1">{titulo}</p>
-              <p className="text-xs text-surface-500">Fecha de emisión: {formatearFecha(new Date().toISOString())}</p>
+              <p className="text-xs text-surface-500 dark:text-surface-400">Fecha de emisión: {formatearFecha(new Date().toISOString())}</p>
             </div>
 
             {sections.datos && (
               <section className="mb-5">
-                <h2 className="text-sm font-black uppercase tracking-wide border-b border-surface-200 pb-1 mb-2">Datos del paciente</h2>
+                <h2 className="text-sm font-black uppercase tracking-wide border-b border-surface-200 dark:border-surface-700 pb-1 mb-2">Datos del paciente</h2>
                 <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
                   <p><span className="font-semibold">Paciente:</span> {patient.nombre} {emojiEspecie(patient.especie)}</p>
                   <p><span className="font-semibold">Especie / Raza:</span> {patient.especie}{patient.raza ? ` / ${patient.raza}` : ''}</p>
@@ -138,16 +138,16 @@ export default function ReportePage() {
 
             {sections.historial && (
               <section className="mb-5">
-                <h2 className="text-sm font-black uppercase tracking-wide border-b border-surface-200 pb-1 mb-2">Historial de consultas</h2>
+                <h2 className="text-sm font-black uppercase tracking-wide border-b border-surface-200 dark:border-surface-700 pb-1 mb-2">Historial de consultas</h2>
                 {records.length === 0 ? (
-                  <p className="text-sm text-surface-400">Sin consultas registradas.</p>
+                  <p className="text-sm text-surface-400 dark:text-surface-500">Sin consultas registradas.</p>
                 ) : (
                   <div className="space-y-2">
                     {records.map(r => (
                       <div key={r.id} className="text-sm">
                         <p className="font-semibold">{r.numero_historia} · {formatearFecha(r.fecha_consulta)}</p>
-                        {r.motivo_consulta && <p className="text-surface-600">{r.motivo_consulta}</p>}
-                        {r.descripcion_hallazgos && <p className="text-surface-600 whitespace-pre-wrap">{r.descripcion_hallazgos}</p>}
+                        {r.motivo_consulta && <p className="text-surface-600 dark:text-surface-300">{r.motivo_consulta}</p>}
+                        {r.descripcion_hallazgos && <p className="text-surface-600 dark:text-surface-300 whitespace-pre-wrap">{r.descripcion_hallazgos}</p>}
                       </div>
                     ))}
                   </div>
@@ -157,13 +157,13 @@ export default function ReportePage() {
 
             {sections.vacunas && (
               <section className="mb-5">
-                <h2 className="text-sm font-black uppercase tracking-wide border-b border-surface-200 pb-1 mb-2">Vacunas</h2>
+                <h2 className="text-sm font-black uppercase tracking-wide border-b border-surface-200 dark:border-surface-700 pb-1 mb-2">Vacunas</h2>
                 {vaccinations.length === 0 ? (
-                  <p className="text-sm text-surface-400">Sin vacunas registradas.</p>
+                  <p className="text-sm text-surface-400 dark:text-surface-500">Sin vacunas registradas.</p>
                 ) : (
                   <table className="w-full text-sm">
                     <thead>
-                      <tr className="text-left text-surface-500 border-b border-surface-200">
+                      <tr className="text-left text-surface-500 dark:text-surface-400 border-b border-surface-200 dark:border-surface-700">
                         <th className="py-1 pr-2 font-semibold">Vacuna</th>
                         <th className="py-1 pr-2 font-semibold">Aplicada</th>
                         <th className="py-1 pr-2 font-semibold">Próxima</th>
@@ -172,7 +172,7 @@ export default function ReportePage() {
                     </thead>
                     <tbody>
                       {vaccinations.map(v => (
-                        <tr key={v.id} className="border-b border-surface-100">
+                        <tr key={v.id} className="border-b border-surface-100 dark:border-surface-800">
                           <td className="py-1 pr-2">{v.vacuna}</td>
                           <td className="py-1 pr-2">{v.fecha_aplicacion ? formatearFecha(v.fecha_aplicacion) : '—'}</td>
                           <td className="py-1 pr-2">{v.fecha_proxima_dosis ? formatearFecha(v.fecha_proxima_dosis) : '—'}</td>
@@ -187,9 +187,9 @@ export default function ReportePage() {
 
             {sections.examenes && (
               <section className="mb-5">
-                <h2 className="text-sm font-black uppercase tracking-wide border-b border-surface-200 pb-1 mb-2">Exámenes de laboratorio</h2>
+                <h2 className="text-sm font-black uppercase tracking-wide border-b border-surface-200 dark:border-surface-700 pb-1 mb-2">Exámenes de laboratorio</h2>
                 {exams.length === 0 ? (
-                  <p className="text-sm text-surface-400">Sin exámenes registrados.</p>
+                  <p className="text-sm text-surface-400 dark:text-surface-500">Sin exámenes registrados.</p>
                 ) : (
                   <div className="space-y-3">
                     {exams.map(e => (
@@ -198,7 +198,7 @@ export default function ReportePage() {
                         {e.analitos.length > 0 && (
                           <table className="w-full mt-1">
                             <thead>
-                              <tr className="text-left text-surface-500 border-b border-surface-200">
+                              <tr className="text-left text-surface-500 dark:text-surface-400 border-b border-surface-200 dark:border-surface-700">
                                 <th className="py-0.5 pr-2 font-semibold">Analito</th>
                                 <th className="py-0.5 pr-2 font-semibold">Valor</th>
                                 <th className="py-0.5 pr-2 font-semibold">Unidad</th>
@@ -207,7 +207,7 @@ export default function ReportePage() {
                             </thead>
                             <tbody>
                               {e.analitos.map((a, i) => (
-                                <tr key={i} className="border-b border-surface-100">
+                                <tr key={i} className="border-b border-surface-100 dark:border-surface-800">
                                   <td className="py-0.5 pr-2">{a.nombre}</td>
                                   <td className="py-0.5 pr-2 font-semibold">{a.valor}</td>
                                   <td className="py-0.5 pr-2">{a.unidad ?? ''}</td>
@@ -217,7 +217,7 @@ export default function ReportePage() {
                             </tbody>
                           </table>
                         )}
-                        {e.notas && <p className="text-surface-600 mt-1">{e.notas}</p>}
+                        {e.notas && <p className="text-surface-600 dark:text-surface-300 mt-1">{e.notas}</p>}
                       </div>
                     ))}
                   </div>
@@ -227,9 +227,9 @@ export default function ReportePage() {
 
             {sections.recetas && (
               <section className="mb-5">
-                <h2 className="text-sm font-black uppercase tracking-wide border-b border-surface-200 pb-1 mb-2">Recetas</h2>
+                <h2 className="text-sm font-black uppercase tracking-wide border-b border-surface-200 dark:border-surface-700 pb-1 mb-2">Recetas</h2>
                 {prescriptions.length === 0 ? (
-                  <p className="text-sm text-surface-400">Sin recetas registradas.</p>
+                  <p className="text-sm text-surface-400 dark:text-surface-500">Sin recetas registradas.</p>
                 ) : (
                   <div className="space-y-3">
                     {prescriptions.map(p => (
@@ -237,7 +237,7 @@ export default function ReportePage() {
                         <p className="font-semibold">{p.titulo ?? 'Receta'} · {p.fecha ? formatearFecha(p.fecha) : ''}</p>
                         <ol className="list-decimal list-inside">
                           {p.medicamentos.map((m, i) => (
-                            <li key={i} className="text-surface-600">
+                            <li key={i} className="text-surface-600 dark:text-surface-300">
                               {m.nombre}
                               {m.dosis && ` — ${m.dosis}`}
                               {m.frecuencia && `, ${m.frecuencia}`}
@@ -246,7 +246,7 @@ export default function ReportePage() {
                             </li>
                           ))}
                         </ol>
-                        {p.notas && <p className="text-surface-600">{p.notas}</p>}
+                        {p.notas && <p className="text-surface-600 dark:text-surface-300">{p.notas}</p>}
                       </div>
                     ))}
                   </div>
@@ -256,16 +256,16 @@ export default function ReportePage() {
 
             {sections.ecografias && (
               <section className="mb-5">
-                <h2 className="text-sm font-black uppercase tracking-wide border-b border-surface-200 pb-1 mb-2">Ecografías</h2>
+                <h2 className="text-sm font-black uppercase tracking-wide border-b border-surface-200 dark:border-surface-700 pb-1 mb-2">Ecografías</h2>
                 {ecografias.length === 0 ? (
-                  <p className="text-sm text-surface-400">Sin ecografías registradas.</p>
+                  <p className="text-sm text-surface-400 dark:text-surface-500">Sin ecografías registradas.</p>
                 ) : (
                   <div className="space-y-3">
                     {ecografias.map(e => (
                       <div key={e.id} className="text-sm">
                         <p className="font-semibold">Ecografía {e.organo ? `· ${e.organo}` : ''} · {e.fecha ? formatearFecha(e.fecha) : ''}</p>
-                        {e.hallazgos && <p className="text-surface-600 whitespace-pre-wrap">{e.hallazgos}</p>}
-                        {e.conclusiones && <p className="text-surface-600 whitespace-pre-wrap"><span className="font-semibold">Conclusión:</span> {e.conclusiones}</p>}
+                        {e.hallazgos && <p className="text-surface-600 dark:text-surface-300 whitespace-pre-wrap">{e.hallazgos}</p>}
+                        {e.conclusiones && <p className="text-surface-600 dark:text-surface-300 whitespace-pre-wrap"><span className="font-semibold">Conclusión:</span> {e.conclusiones}</p>}
                       </div>
                     ))}
                   </div>
@@ -275,15 +275,15 @@ export default function ReportePage() {
 
             {notaGeneral.trim() && (
               <section className="mb-5">
-                <h2 className="text-sm font-black uppercase tracking-wide border-b border-surface-200 pb-1 mb-2">Nota general</h2>
-                <p className="text-sm text-surface-700 whitespace-pre-wrap">{notaGeneral}</p>
+                <h2 className="text-sm font-black uppercase tracking-wide border-b border-surface-200 dark:border-surface-700 pb-1 mb-2">Nota general</h2>
+                <p className="text-sm text-surface-700 dark:text-surface-200 whitespace-pre-wrap">{notaGeneral}</p>
               </section>
             )}
 
             {/* Sistemas del último registro (si existe) */}
             {records[0]?.sistemas_status && (
               <section>
-                <h2 className="text-sm font-black uppercase tracking-wide border-b border-surface-200 pb-1 mb-2">Estado clínico — último registro</h2>
+                <h2 className="text-sm font-black uppercase tracking-wide border-b border-surface-200 dark:border-surface-700 pb-1 mb-2">Estado clínico — último registro</h2>
                 <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
                   {SISTEMAS_CONFIG.map(s => {
                     const st = records[0].sistemas_status?.[s.key] ?? 'NE';

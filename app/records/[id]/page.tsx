@@ -53,12 +53,12 @@ export default function RecordDetailPage() {
 
   return (
     <AppShell>
-      <header className="bg-white border-b border-surface-200 px-4 lg:px-8 py-4 sticky top-0 z-20 shadow-sm flex items-center justify-between">
+      <header className="bg-white dark:bg-surface-800 border-b border-surface-200 dark:border-surface-700 px-4 lg:px-8 py-4 sticky top-0 z-20 shadow-sm flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Link href={`/patients/${record.patient_id}`} className="p-2 rounded-xl text-surface-400 hover:text-surface-700 hover:bg-surface-100 transition-colors">‹</Link>
+          <Link href={`/patients/${record.patient_id}`} className="p-2 rounded-xl text-surface-400 dark:text-surface-500 hover:text-surface-700 dark:hover:text-surface-300 hover:bg-surface-100 dark:hover:bg-surface-800 transition-colors">‹</Link>
           <div>
-            <h1 className="text-lg font-black text-surface-800">{record.numero_historia ?? 'Historia Clínica'}</h1>
-            <p className="text-xs text-surface-400">
+            <h1 className="text-lg font-black text-surface-800 dark:text-white">{record.numero_historia ?? 'Historia Clínica'}</h1>
+            <p className="text-xs text-surface-400 dark:text-surface-500">
               {record.fecha_consulta
                 ? new Date(record.fecha_consulta).toLocaleDateString('es-VE', {
                     day: 'numeric', month: 'long', year: 'numeric',
@@ -69,7 +69,7 @@ export default function RecordDetailPage() {
         </div>
         <button
           onClick={() => setMode(mode === 'view' ? 'edit' : 'view')}
-          className="px-4 py-2 rounded-xl bg-surface-100 hover:bg-surface-200 text-surface-700 text-sm font-semibold transition-colors"
+          className="px-4 py-2 rounded-xl bg-surface-100 dark:bg-surface-800 hover:bg-surface-200 dark:hover:bg-surface-700 text-surface-700 dark:text-surface-200 text-sm font-semibold transition-colors"
         >
           {mode === 'view' ? '✏️ Editar' : '👁 Ver'}
         </button>
@@ -123,7 +123,7 @@ export default function RecordDetailPage() {
                     const colorMap = {
                       N:  'text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-950/30',
                       AN: 'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/30',
-                      NE: 'text-surface-400 bg-surface-100 dark:bg-surface-800',
+                      NE: 'text-surface-400 dark:text-surface-500 bg-surface-100 dark:bg-surface-800',
                     };
                     return (
                       <div key={s.key}>
@@ -228,7 +228,7 @@ function VitalRow({ label, value, unit }: { label: string; value?: string | null
   if (!value) return null;
   return (
     <div className="flex flex-col gap-0.5">
-      <span className="text-xs text-surface-400">{label}</span>
+      <span className="text-xs text-surface-400 dark:text-surface-500">{label}</span>
       <span className="text-sm font-semibold text-surface-700 dark:text-surface-200">
         {value}{unit ? ` ${unit}` : ''}
       </span>
@@ -240,7 +240,7 @@ function AnamRow({ label, value }: { label: string; value?: string | null }) {
   if (!value) return null;
   return (
     <div>
-      <span className="text-xs text-surface-400">{label}: </span>
+      <span className="text-xs text-surface-400 dark:text-surface-500">{label}: </span>
       <span className="text-xs text-surface-700 dark:text-surface-200">{value}</span>
     </div>
   );

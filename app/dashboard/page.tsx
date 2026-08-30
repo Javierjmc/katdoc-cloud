@@ -60,10 +60,10 @@ export default function DashboardPage() {
 
   return (
     <AppShell>
-      <header className="bg-white border-b border-surface-200 px-4 lg:px-8 py-4 flex items-center justify-between sticky top-0 z-20 shadow-sm">
+      <header className="bg-white dark:bg-surface-800 border-b border-surface-200 dark:border-surface-700 px-4 lg:px-8 py-4 flex items-center justify-between sticky top-0 z-20 shadow-sm">
         <div>
-          <h1 className="text-xl font-black text-surface-800 tracking-tight">Dashboard</h1>
-          <p className="text-xs text-surface-400 hidden sm:block">Bienvenido a KATDOC</p>
+          <h1 className="text-xl font-black text-surface-800 dark:text-white tracking-tight">Dashboard</h1>
+          <p className="text-xs text-surface-400 dark:text-surface-500 hidden sm:block">Bienvenido a KATDOC</p>
         </div>
         <Link href="/patients/new" className="flex items-center gap-2 px-4 py-2 rounded-xl bg-brand-500 hover:bg-brand-600 text-white text-sm font-bold transition-colors shadow-md shadow-brand-500/20">
           <span>➕</span>
@@ -80,30 +80,30 @@ export default function DashboardPage() {
         </div>
 
         {/* Próximos eventos (7 días) */}
-        <section className="bg-white rounded-2xl border border-surface-200 p-4 shadow-sm space-y-3">
+        <section className="bg-white dark:bg-surface-800 rounded-2xl border border-surface-200 dark:border-surface-700 p-4 shadow-sm space-y-3">
           <div className="flex items-center justify-between">
-            <h2 className="font-black text-surface-800 text-sm flex items-center gap-2">📅 Próximos eventos</h2>
+            <h2 className="font-black text-surface-800 dark:text-white text-sm flex items-center gap-2">📅 Próximos eventos</h2>
             <Link href="/agenda" className="text-xs font-bold text-brand-600 hover:text-brand-700">Ver agenda ›</Link>
           </div>
 
           {eventsLoading ? (
             <div className="space-y-2">
-              {[1, 2, 3].map(i => <div key={i} className="h-12 rounded-xl bg-surface-200 animate-pulse" />)}
+              {[1, 2, 3].map(i => <div key={i} className="h-12 rounded-xl bg-surface-200 dark:bg-surface-700 animate-pulse" />)}
             </div>
           ) : upcoming.length === 0 ? (
-            <p className="text-sm text-surface-400 py-3 text-center">Sin citas ni controles pendientes esta semana.</p>
+            <p className="text-sm text-surface-400 dark:text-surface-500 py-3 text-center">Sin citas ni controles pendientes esta semana.</p>
           ) : (
             <div className="space-y-2">
               {upcoming.map(e => (
                 <Link key={`${e.type}-${e.id}`} href={`/patients/${e.patientId}`}
-                  className="flex items-center gap-3 p-2.5 rounded-xl border border-surface-200 hover:border-brand-400 hover:bg-brand-50/40 transition-colors">
+                  className="flex items-center gap-3 p-2.5 rounded-xl border border-surface-200 dark:border-surface-700 hover:border-brand-400 hover:bg-brand-50/40 transition-colors">
                   <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${EVENT_META[e.type].dot}`} />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <p className="font-bold text-sm text-surface-800 truncate">{e.titulo}</p>
+                      <p className="font-bold text-sm text-surface-800 dark:text-white truncate">{e.titulo}</p>
                       <span className={`text-[10px] px-2 py-0.5 rounded-full border font-bold ${EVENT_META[e.type].badge}`}>{EVENT_META[e.type].label}</span>
                     </div>
-                    <p className="text-xs text-surface-500 mt-0.5 truncate">
+                    <p className="text-xs text-surface-500 dark:text-surface-400 mt-0.5 truncate">
                       🐾 {e.patientNombre}
                       <span className="text-surface-300"> · </span>
                       {new Date(e.fecha + 'T12:00:00').toLocaleDateString('es-VE', { weekday: 'short', day: 'numeric', month: 'short' })}
@@ -119,17 +119,17 @@ export default function DashboardPage() {
         </section>
 
         {/* Buscador */}
-        <div className="bg-white rounded-2xl border border-surface-200 p-4 shadow-sm space-y-3">
+        <div className="bg-white dark:bg-surface-800 rounded-2xl border border-surface-200 dark:border-surface-700 p-4 shadow-sm space-y-3">
           <div className="relative">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-surface-400">🔍</span>
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-surface-400 dark:text-surface-500">🔍</span>
             <input type="search" placeholder="Buscar mascota, tutor, cédula, n° historia..."
               value={search} onChange={e => setSearch(e.target.value)}
-              className="w-full pl-9 pr-4 py-2.5 rounded-xl bg-surface-50 border border-surface-200 text-surface-800 placeholder:text-surface-400 focus:outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-400/20 text-sm" />
+              className="w-full pl-9 pr-4 py-2.5 rounded-xl bg-surface-50 dark:bg-surface-900 border border-surface-200 dark:border-surface-700 text-surface-800 dark:text-white placeholder:text-surface-400 dark:placeholder:text-surface-500 focus:outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-400/20 text-sm" />
           </div>
           <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
             {['', ...ESPECIES].map(e => (
               <button key={e} onClick={() => setFilterEspecie(e)}
-                className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all ${filterEspecie === e ? 'bg-brand-500 text-white shadow-sm' : 'bg-surface-100 text-surface-600 hover:bg-surface-200'}`}>
+                className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all ${filterEspecie === e ? 'bg-brand-500 text-white shadow-sm' : 'bg-surface-100 dark:bg-surface-800 text-surface-600 dark:text-surface-300 hover:bg-surface-200 dark:hover:bg-surface-700'}`}>
                 {e || 'Todos'}
               </button>
             ))}
@@ -138,18 +138,18 @@ export default function DashboardPage() {
 
         {/* Lista */}
         <div>
-          <p className="text-sm text-surface-500 font-medium mb-3">
+          <p className="text-sm text-surface-500 dark:text-surface-400 font-medium mb-3">
             {loading ? 'Cargando...' : `${filtered.length} resultado${filtered.length !== 1 ? 's' : ''}`}
           </p>
           {loading ? (
             <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-              {[1,2,3,4,5,6].map(i => <div key={i} className="h-28 rounded-2xl bg-surface-200 animate-pulse" />)}
+              {[1,2,3,4,5,6].map(i => <div key={i} className="h-28 rounded-2xl bg-surface-200 dark:bg-surface-700 animate-pulse" />)}
             </div>
           ) : filtered.length === 0 ? (
             <div className="flex flex-col items-center py-20 text-center">
               <span className="text-5xl mb-3">🔍</span>
-              <p className="font-bold text-surface-600">{search ? 'Sin resultados' : 'Sin pacientes aún'}</p>
-              <p className="text-sm text-surface-400 mt-1">{search ? `No hay coincidencias para "${search}"` : 'Registra el primer paciente.'}</p>
+              <p className="font-bold text-surface-600 dark:text-surface-300">{search ? 'Sin resultados' : 'Sin pacientes aún'}</p>
+              <p className="text-sm text-surface-400 dark:text-surface-500 mt-1">{search ? `No hay coincidencias para "${search}"` : 'Registra el primer paciente.'}</p>
               {!search && <Link href="/patients/new" className="mt-4 px-4 py-2 rounded-xl bg-brand-500 text-white text-sm font-bold">Registrar paciente</Link>}
             </div>
           ) : (
@@ -179,11 +179,11 @@ function StatCard({ icon, label, value, color, bg, loading }: {
   icon: string; label: string; value: number; color: string; bg: string; loading: boolean;
 }) {
   return (
-    <div className="bg-white rounded-2xl border border-surface-200 p-4 shadow-sm">
+    <div className="bg-white dark:bg-surface-800 rounded-2xl border border-surface-200 dark:border-surface-700 p-4 shadow-sm">
       <div className={`w-10 h-10 rounded-xl ${bg} flex items-center justify-center text-xl mb-3`}>{icon}</div>
-      {loading ? <div className="h-7 w-12 bg-surface-200 rounded animate-pulse mb-1" />
+      {loading ? <div className="h-7 w-12 bg-surface-200 dark:bg-surface-700 rounded animate-pulse mb-1" />
                : <p className={`text-2xl font-black ${color}`}>{value}</p>}
-      <p className="text-xs text-surface-400 font-medium">{label}</p>
+      <p className="text-xs text-surface-400 dark:text-surface-500 font-medium">{label}</p>
     </div>
   );
 }
@@ -192,7 +192,7 @@ function PatientCard({ row }: { row: DashboardRow }) {
   const emoji: Record<string, string> = { Canino:'🐶', Felino:'🐱', Exótico:'🦜', Bovino:'🐄', Equino:'🐴', Otro:'🐾' };
   return (
     <Link href={`/patients/${row.patient_id}`} className="
-      block bg-white rounded-2xl border border-surface-200
+      block bg-white dark:bg-surface-800 rounded-2xl border border-surface-200 dark:border-surface-700
       hover:border-brand-400 hover:shadow-md hover:shadow-brand-500/10
       transition-all duration-200 p-4 group
     ">
@@ -205,12 +205,12 @@ function PatientCard({ row }: { row: DashboardRow }) {
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <h3 className="font-bold text-surface-800 truncate group-hover:text-brand-600 transition-colors">{row.patient_nombre}</h3>
+            <h3 className="font-bold text-surface-800 dark:text-white truncate group-hover:text-brand-600 transition-colors">{row.patient_nombre}</h3>
             <span className="text-xs px-2 py-0.5 rounded-full bg-brand-50 text-brand-600 border border-brand-200 font-semibold shrink-0">{row.especie}</span>
           </div>
-          <p className="text-xs text-surface-500 truncate mt-0.5">👤 {row.tutor_nombre} · {row.tutor_cedula}</p>
+          <p className="text-xs text-surface-500 dark:text-surface-400 truncate mt-0.5">👤 {row.tutor_nombre} · {row.tutor_cedula}</p>
           {row.numero_historia && (
-            <p className="text-xs text-surface-400 mt-0.5">
+            <p className="text-xs text-surface-400 dark:text-surface-500 mt-0.5">
               📋 {row.numero_historia}
               {row.fecha_consulta && <span> · {new Date(row.fecha_consulta).toLocaleDateString('es-VE')}</span>}
             </p>
@@ -219,7 +219,7 @@ function PatientCard({ row }: { row: DashboardRow }) {
         <span className="text-surface-300 group-hover:text-brand-400 text-lg">›</span>
       </div>
       {row.motivo_consulta && (
-        <p className="mt-2 text-xs text-surface-500 bg-surface-50 rounded-xl px-3 py-2 line-clamp-2">{row.motivo_consulta}</p>
+        <p className="mt-2 text-xs text-surface-500 dark:text-surface-400 bg-surface-50 dark:bg-surface-900 rounded-xl px-3 py-2 line-clamp-2">{row.motivo_consulta}</p>
       )}
     </Link>
   );

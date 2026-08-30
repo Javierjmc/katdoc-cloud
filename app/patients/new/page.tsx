@@ -23,11 +23,11 @@ function NewPatientContent() {
 
   return (
     <AppShell>
-      <header className="bg-white border-b border-surface-200 px-4 lg:px-8 py-4 sticky top-0 z-20 shadow-sm flex items-center gap-3">
-        <Link href={prefillTutor ? '/tutors' : '/patients'} className="p-2 rounded-xl text-surface-400 hover:text-surface-700 hover:bg-surface-100 transition-colors">‹</Link>
+      <header className="bg-white dark:bg-surface-800 border-b border-surface-200 dark:border-surface-700 px-4 lg:px-8 py-4 sticky top-0 z-20 shadow-sm flex items-center gap-3">
+        <Link href={prefillTutor ? '/tutors' : '/patients'} className="p-2 rounded-xl text-surface-400 dark:text-surface-500 hover:text-surface-700 dark:hover:text-surface-300 hover:bg-surface-100 dark:hover:bg-surface-800 transition-colors">‹</Link>
         <div>
-          <h1 className="text-lg font-black text-surface-800">Nuevo Paciente</h1>
-          <p className="text-xs text-surface-400">
+          <h1 className="text-lg font-black text-surface-800 dark:text-white">Nuevo Paciente</h1>
+          <p className="text-xs text-surface-400 dark:text-surface-500">
             {prefillTutor?.nombre ? `Tutor: ${prefillTutor.nombre}` : 'Completa los datos del propietario y la mascota'}
           </p>
         </div>

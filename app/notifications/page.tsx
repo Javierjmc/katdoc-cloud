@@ -132,10 +132,10 @@ export default function NotificationsPage() {
 
   return (
     <AppShell>
-      <header className="bg-white border-b border-surface-200 px-4 lg:px-8 py-4 sticky top-0 z-20 shadow-sm flex items-center justify-between gap-3 flex-wrap">
+      <header className="bg-white dark:bg-surface-800 border-b border-surface-200 dark:border-surface-700 px-4 lg:px-8 py-4 sticky top-0 z-20 shadow-sm flex items-center justify-between gap-3 flex-wrap">
         <div>
-          <h1 className="text-xl font-black text-surface-800">Notificaciones</h1>
-          <p className="text-xs text-surface-400">
+          <h1 className="text-xl font-black text-surface-800 dark:text-white">Notificaciones</h1>
+          <p className="text-xs text-surface-400 dark:text-surface-500">
             {tab === 'pendientes'
               ? `${reminders.length} pendiente${reminders.length !== 1 ? 's' : ''}`
               : `${seguimiento.length} en seguimiento`}
@@ -152,7 +152,7 @@ export default function NotificationsPage() {
 
       <div className="px-4 lg:px-8 py-6 max-w-3xl mx-auto space-y-6">
         {/* Tabs */}
-        <div className="flex gap-1 bg-surface-100 rounded-xl p-1 w-fit">
+        <div className="flex gap-1 bg-surface-100 dark:bg-surface-800 rounded-xl p-1 w-fit">
           <TabButton active={tab === 'pendientes'} onClick={() => setTab('pendientes')} label={`Pendientes${reminders.length ? ` (${reminders.length})` : ''}`} />
           <TabButton active={tab === 'seguimiento'} onClick={() => setTab('seguimiento')} label={`Seguimiento${seguimiento.length ? ` (${seguimiento.length})` : ''}`} />
         </div>
@@ -209,7 +209,7 @@ function TabButton({ active, onClick, label }: { active: boolean; onClick: () =>
   return (
     <button
       onClick={onClick}
-      className={`px-4 py-2 rounded-lg text-sm font-bold transition-colors ${active ? 'bg-white text-surface-800 shadow-sm' : 'text-surface-500 hover:text-surface-700'}`}
+      className={`px-4 py-2 rounded-lg text-sm font-bold transition-colors ${active ? 'bg-white dark:bg-surface-800 text-surface-800 dark:text-white shadow-sm' : 'text-surface-500 dark:text-surface-400 hover:text-surface-700 dark:hover:text-surface-300'}`}
     >
       {label}
     </button>
@@ -219,7 +219,7 @@ function TabButton({ active, onClick, label }: { active: boolean; onClick: () =>
 function Group({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div>
-      <h2 className="text-sm font-black text-surface-700 mb-2">{title}</h2>
+      <h2 className="text-sm font-black text-surface-700 dark:text-surface-200 mb-2">{title}</h2>
       <div className="space-y-2">{children}</div>
     </div>
   );
@@ -243,14 +243,14 @@ function ReminderCard({ r, busy, onWhatsApp, onEmail, onMarcar, onSinRespuesta, 
   onDescartar: () => void;
 }) {
   return (
-    <div className="bg-white rounded-2xl border border-surface-200 shadow-sm p-4 space-y-2">
+    <div className="bg-white dark:bg-surface-800 rounded-2xl border border-surface-200 dark:border-surface-700 shadow-sm p-4 space-y-2">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <p className="font-bold text-sm text-surface-800">{r.titulo}</p>
-          <p className="text-xs text-surface-500">
+          <p className="font-bold text-sm text-surface-800 dark:text-white">{r.titulo}</p>
+          <p className="text-xs text-surface-500 dark:text-surface-400">
             🐾 {r.patient?.nombre} · 👤 {r.tutor?.nombre}
           </p>
-          <p className="text-xs text-surface-400">
+          <p className="text-xs text-surface-400 dark:text-surface-500">
             📅 {new Date(r.fecha_evento).toLocaleDateString('es-VE')}
             {r.descripcion && <span className="block">{r.descripcion}</span>}
           </p>
@@ -264,7 +264,7 @@ function ReminderCard({ r, busy, onWhatsApp, onEmail, onMarcar, onSinRespuesta, 
           📲 WhatsApp
         </button>
         <button onClick={onEmail} disabled={busy}
-          className="px-3 py-1.5 rounded-lg bg-surface-100 hover:bg-surface-200 text-surface-600 text-xs font-semibold transition-colors disabled:opacity-50">
+          className="px-3 py-1.5 rounded-lg bg-surface-100 dark:bg-surface-800 hover:bg-surface-200 dark:hover:bg-surface-700 text-surface-600 dark:text-surface-300 text-xs font-semibold transition-colors disabled:opacity-50">
           ✉️ Email
         </button>
         <div className="flex-1" />
@@ -307,14 +307,14 @@ function SeguimientoCard({ r, busy, onWhatsApp, onEmail, onMarcar, onVolver, onD
   }, [r.fecha_envio, r.fecha_seguimiento, r.estado]);
 
   return (
-    <div className="bg-white rounded-2xl border border-yellow-200 shadow-sm p-4 space-y-2">
+    <div className="bg-white dark:bg-surface-800 rounded-2xl border border-yellow-200 shadow-sm p-4 space-y-2">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <p className="font-bold text-sm text-surface-800">{r.titulo}</p>
-          <p className="text-xs text-surface-500">
+          <p className="font-bold text-sm text-surface-800 dark:text-white">{r.titulo}</p>
+          <p className="text-xs text-surface-500 dark:text-surface-400">
             🐾 {r.patient?.nombre} · 👤 {r.tutor?.nombre}
           </p>
-          <p className="text-xs text-surface-400">
+          <p className="text-xs text-surface-400 dark:text-surface-500">
             📅 {new Date(r.fecha_evento).toLocaleDateString('es-VE')}
             {r.descripcion && <span className="block">{r.descripcion}</span>}
           </p>
@@ -330,7 +330,7 @@ function SeguimientoCard({ r, busy, onWhatsApp, onEmail, onMarcar, onVolver, onD
           📲 Re-enviar WhatsApp
         </button>
         <button onClick={onEmail} disabled={busy}
-          className="px-3 py-1.5 rounded-lg bg-surface-100 hover:bg-surface-200 text-surface-600 text-xs font-semibold transition-colors disabled:opacity-50">
+          className="px-3 py-1.5 rounded-lg bg-surface-100 dark:bg-surface-800 hover:bg-surface-200 dark:hover:bg-surface-700 text-surface-600 dark:text-surface-300 text-xs font-semibold transition-colors disabled:opacity-50">
           ✉️ Email
         </button>
         <div className="flex-1" />
@@ -339,7 +339,7 @@ function SeguimientoCard({ r, busy, onWhatsApp, onEmail, onMarcar, onVolver, onD
           ✓ Respondió
         </button>
         <button onClick={onVolver} disabled={busy}
-          className="px-3 py-1.5 rounded-lg bg-surface-100 hover:bg-surface-200 text-surface-600 text-xs font-semibold transition-colors disabled:opacity-50">
+          className="px-3 py-1.5 rounded-lg bg-surface-100 dark:bg-surface-800 hover:bg-surface-200 dark:hover:bg-surface-700 text-surface-600 dark:text-surface-300 text-xs font-semibold transition-colors disabled:opacity-50">
           ↺ Pendiente
         </button>
         <button onClick={onDescartar} disabled={busy}
@@ -349,10 +349,10 @@ function SeguimientoCard({ r, busy, onWhatsApp, onEmail, onMarcar, onVolver, onD
       </div>
 
       {/* Historial de intentos */}
-      <div className="border-t border-surface-100 pt-2">
+      <div className="border-t border-surface-100 dark:border-surface-800 pt-2">
         <button
           onClick={() => setShowHistorial(h => !h)}
-          className="text-xs font-bold text-surface-500 hover:text-brand-600 transition-colors flex items-center gap-1"
+          className="text-xs font-bold text-surface-500 dark:text-surface-400 hover:text-brand-600 transition-colors flex items-center gap-1"
         >
           {showHistorial ? '▾' : '▸'} Historial de intentos ({logsLoading ? '…' : logs.length})
         </button>
@@ -360,19 +360,19 @@ function SeguimientoCard({ r, busy, onWhatsApp, onEmail, onMarcar, onVolver, onD
         {showHistorial && (
           <div className="mt-2 space-y-1.5">
             {logs.length === 0 ? (
-              <p className="text-xs text-surface-400 py-1">Sin intentos registrados.</p>
+              <p className="text-xs text-surface-400 dark:text-surface-500 py-1">Sin intentos registrados.</p>
             ) : (
               logs.map(log => (
                 <div key={log.id} className="flex items-start gap-2 text-xs">
-                  <span className={`shrink-0 w-1.5 h-1.5 rounded-full mt-1 ${log.estado === 'enviado' ? 'bg-green-500' : log.estado === 'sin_respuesta' ? 'bg-yellow-500' : log.estado === 'error' ? 'bg-red-500' : 'bg-surface-300'}`} />
+                  <span className={`shrink-0 w-1.5 h-1.5 rounded-full mt-1 ${log.estado === 'enviado' ? 'bg-green-500' : log.estado === 'sin_respuesta' ? 'bg-yellow-500' : log.estado === 'error' ? 'bg-red-500' : 'bg-surface-300 dark:bg-surface-600'}`} />
                   <div className="flex-1 min-w-0">
-                    <p className="text-surface-700 font-semibold capitalize">
+                    <p className="text-surface-700 dark:text-surface-200 font-semibold capitalize">
                       {log.estado === 'sin_respuesta' ? 'Sin respuesta' : log.estado}
-                      {log.canal && <span className="text-surface-400 font-normal"> · {log.canal === 'whatsapp' ? 'WhatsApp' : 'Email'}</span>}
+                      {log.canal && <span className="text-surface-400 dark:text-surface-500 font-normal"> · {log.canal === 'whatsapp' ? 'WhatsApp' : 'Email'}</span>}
                     </p>
-                    {log.detalle && <p className="text-surface-400">{log.detalle}</p>}
+                    {log.detalle && <p className="text-surface-400 dark:text-surface-500">{log.detalle}</p>}
                   </div>
-                  <span className="text-surface-400 shrink-0">
+                  <span className="text-surface-400 dark:text-surface-500 shrink-0">
                     {new Date(log.created_at).toLocaleString('es-VE', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
                   </span>
                 </div>

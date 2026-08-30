@@ -18,9 +18,11 @@
   html { -webkit-tap-highlight-color: transparent; scroll-behavior: smooth; }
 
   body {
-    @apply bg-surface-50 text-surface-900;
+    @apply bg-surface-50 text-surface-900 dark:bg-surface-900 dark:text-surface-100;
     font-feature-settings: "rlig" 1, "calt" 1;
   }
+
+  .dark { color-scheme: dark; }
 
   /* Fix zoom en iOS */
   input, select, textarea { font-size: 16px; }

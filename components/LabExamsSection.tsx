@@ -202,9 +202,9 @@ export default function LabExamsSection({ patientId }: { patientId: string }) {
   };
 
   return (
-    <div className="bg-white rounded-2xl border border-surface-200 shadow-sm overflow-hidden">
-      <div className="flex items-center justify-between px-4 py-3 border-b border-surface-100">
-        <h3 className="text-sm font-black text-surface-700">🔬 Exámenes de laboratorio</h3>
+    <div className="bg-white dark:bg-surface-800 rounded-2xl border border-surface-200 dark:border-surface-700 shadow-sm overflow-hidden">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-surface-100 dark:border-surface-800">
+        <h3 className="text-sm font-black text-surface-700 dark:text-surface-200">🔬 Exámenes de laboratorio</h3>
         <button
           onClick={openCreate}
           className="px-3 py-1.5 rounded-lg bg-brand-500 hover:bg-brand-600 text-white text-xs font-bold transition-colors"
@@ -215,23 +215,23 @@ export default function LabExamsSection({ patientId }: { patientId: string }) {
 
       <div className="p-4 space-y-2">
         {loading ? (
-          <div className="space-y-2">{[1, 2].map(i => <div key={i} className="h-14 rounded-xl bg-surface-100 animate-pulse" />)}</div>
+          <div className="space-y-2">{[1, 2].map(i => <div key={i} className="h-14 rounded-xl bg-surface-100 dark:bg-surface-800 animate-pulse" />)}</div>
         ) : exams.length === 0 ? (
           <EmptyState icon="🔬" title="Sin exámenes" subtitle="Carga exámenes de laboratorio (PDF o foto) de otros laboratorios."
             action={<Button size="sm" onClick={openCreate}>Cargar examen</Button>} />
         ) : (
           exams.map(exam => (
-            <div key={exam.id} className="rounded-xl border border-surface-200 overflow-hidden">
+            <div key={exam.id} className="rounded-xl border border-surface-200 dark:border-surface-700 overflow-hidden">
               <button
                 onClick={() => setExpanded(expanded === exam.id ? null : exam.id)}
-                className="w-full flex items-center gap-3 p-3 text-left hover:bg-surface-50 transition-colors"
+                className="w-full flex items-center gap-3 p-3 text-left hover:bg-surface-50 dark:hover:bg-surface-800 transition-colors"
               >
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <p className="font-bold text-sm text-surface-800">{exam.nombre_examen}</p>
+                    <p className="font-bold text-sm text-surface-800 dark:text-white">{exam.nombre_examen}</p>
                     {flagSummary(exam.analitos)}
                   </div>
-                  <p className="text-xs text-surface-500 mt-0.5">
+                  <p className="text-xs text-surface-500 dark:text-surface-400 mt-0.5">
                     {exam.laboratorio_origen && `${exam.laboratorio_origen} · `}
                     {exam.fecha_examen ? new Date(exam.fecha_examen).toLocaleDateString('es-VE') : 'Sin fecha'}
                   </p>
@@ -240,11 +240,11 @@ export default function LabExamsSection({ patientId }: { patientId: string }) {
               </button>
 
               {expanded === exam.id && (
-                <div className="border-t border-surface-100 px-3 pb-3 pt-2 space-y-2">
+                <div className="border-t border-surface-100 dark:border-surface-800 px-3 pb-3 pt-2 space-y-2">
                   {exam.analitos.length > 0 ? (
                     <table className="w-full text-xs">
                       <thead>
-                        <tr className="text-surface-400 text-left">
+                        <tr className="text-surface-400 dark:text-surface-500 text-left">
                           <th className="py-1 pr-2 font-semibold">Analito</th>
                           <th className="py-1 pr-2 font-semibold">Valor</th>
                           <th className="py-1 pr-2 font-semibold">Unidad</th>
@@ -254,11 +254,11 @@ export default function LabExamsSection({ patientId }: { patientId: string }) {
                       </thead>
                       <tbody>
                         {exam.analitos.map((a, i) => (
-                          <tr key={i} className="border-t border-surface-100">
-                            <td className="py-1.5 pr-2 font-semibold text-surface-700">{a.nombre}</td>
-                            <td className="py-1.5 pr-2 text-surface-700">{a.valor}</td>
-                            <td className="py-1.5 pr-2 text-surface-500">{a.unidad ?? ''}</td>
-                            <td className="py-1.5 pr-2 text-surface-500">{a.rango ?? ''}</td>
+                          <tr key={i} className="border-t border-surface-100 dark:border-surface-800">
+                            <td className="py-1.5 pr-2 font-semibold text-surface-700 dark:text-surface-200">{a.nombre}</td>
+                            <td className="py-1.5 pr-2 text-surface-700 dark:text-surface-200">{a.valor}</td>
+                            <td className="py-1.5 pr-2 text-surface-500 dark:text-surface-400">{a.unidad ?? ''}</td>
+                            <td className="py-1.5 pr-2 text-surface-500 dark:text-surface-400">{a.rango ?? ''}</td>
                             <td className="py-1.5">
                               {a.flag === 'ALTO' && <FlagBadge type="alto" />}
                               {a.flag === 'BAJO' && <FlagBadge type="bajo" />}
@@ -269,10 +269,10 @@ export default function LabExamsSection({ patientId }: { patientId: string }) {
                       </tbody>
                     </table>
                   ) : (
-                    <p className="text-xs text-surface-400 py-1">Sin analitos cargados.</p>
+                    <p className="text-xs text-surface-400 dark:text-surface-500 py-1">Sin analitos cargados.</p>
                   )}
 
-                  {exam.notas && <p className="text-xs text-surface-500 whitespace-pre-wrap">{exam.notas}</p>}
+                  {exam.notas && <p className="text-xs text-surface-500 dark:text-surface-400 whitespace-pre-wrap">{exam.notas}</p>}
 
                   <div className="flex items-center gap-2 pt-1">
                     {exam.file_url && (
@@ -282,7 +282,7 @@ export default function LabExamsSection({ patientId }: { patientId: string }) {
                       </a>
                     )}
                     <div className="flex-1" />
-                    <button onClick={() => openEdit(exam)} className="px-2.5 py-1 rounded-lg bg-surface-100 hover:bg-surface-200 text-surface-600 text-xs font-semibold">✏️ Editar</button>
+                    <button onClick={() => openEdit(exam)} className="px-2.5 py-1 rounded-lg bg-surface-100 dark:bg-surface-800 hover:bg-surface-200 dark:hover:bg-surface-700 text-surface-600 dark:text-surface-300 text-xs font-semibold">✏️ Editar</button>
                     <button onClick={() => setToDelete(exam)} className="px-2.5 py-1 rounded-lg bg-red-50 hover:bg-red-100 text-red-500 text-xs font-semibold">🗑️</button>
                   </div>
                 </div>
@@ -295,8 +295,8 @@ export default function LabExamsSection({ patientId }: { patientId: string }) {
       {/* Editor / wizard */}
       {editor && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={() => !saving && setEditor(null)}>
-          <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-3xl bg-white border border-surface-200 shadow-2xl p-6 space-y-3" onClick={e => e.stopPropagation()}>
-            <h3 className="text-base font-bold text-surface-800">{editor.mode === 'create' ? 'Cargar examen de laboratorio' : 'Editar examen'}</h3>
+          <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-3xl bg-white dark:bg-surface-800 border border-surface-200 dark:border-surface-700 shadow-2xl p-6 space-y-3" onClick={e => e.stopPropagation()}>
+            <h3 className="text-base font-bold text-surface-800 dark:text-white">{editor.mode === 'create' ? 'Cargar examen de laboratorio' : 'Editar examen'}</h3>
 
             <div className="grid grid-cols-2 gap-3">
               <Field label="Nombre del examen" required className="col-span-2 sm:col-span-1">
@@ -316,7 +316,7 @@ export default function LabExamsSection({ patientId }: { patientId: string }) {
             {/* Archivo */}
             <Field label="Archivo (PDF o foto)">
               <label className="flex items-center justify-center gap-2 border-2 border-dashed border-surface-300 rounded-xl p-4 text-center cursor-pointer hover:border-brand-400 transition-colors">
-                <span className="text-xs text-surface-500">
+                <span className="text-xs text-surface-500 dark:text-surface-400">
                   {editor.file
                     ? `📄 ${editor.file.name}`
                     : editor.hasFile
@@ -331,11 +331,11 @@ export default function LabExamsSection({ patientId }: { patientId: string }) {
             {/* Analitos */}
             <div>
               <div className="flex items-center justify-between mb-2">
-                <p className="text-xs font-black text-surface-600 uppercase tracking-wide">Analitos</p>
+                <p className="text-xs font-black text-surface-600 dark:text-surface-300 uppercase tracking-wide">Analitos</p>
                 <button onClick={addAnalyte} className="text-xs font-bold text-brand-500 hover:text-brand-600">+ Agregar fila</button>
               </div>
               {editor.analitos.length === 0 ? (
-                <p className="text-xs text-surface-400 bg-surface-50 rounded-xl p-3">Sin analitos todavía. Agrégalos a mano o usa &quot;Extraer con IA&quot; sobre el archivo.</p>
+                <p className="text-xs text-surface-400 dark:text-surface-500 bg-surface-50 dark:bg-surface-900 rounded-xl p-3">Sin analitos todavía. Agrégalos a mano o usa &quot;Extraer con IA&quot; sobre el archivo.</p>
               ) : (
                 <div className="space-y-1.5">
                   {editor.analitos.map((a, idx) => (
@@ -362,14 +362,14 @@ export default function LabExamsSection({ patientId }: { patientId: string }) {
                 disabled={!editor.file || extracting}
                 className={`mt-2 w-full py-2.5 rounded-xl text-sm font-semibold transition-colors ${
                   !editor.file
-                    ? 'bg-surface-100 text-surface-400 cursor-not-allowed'
+                    ? 'bg-surface-100 dark:bg-surface-800 text-surface-400 dark:text-surface-500 cursor-not-allowed'
                     : 'bg-brand-50 text-brand-600 hover:bg-brand-100'
                 }`}
               >
                 {extracting ? '⏳ Extrayendo con IA...' : '✨ Extraer con IA'}
               </button>
               {!editor.file && (
-                <p className="text-[11px] text-surface-400 mt-1">Sube un PDF o foto primero para usar la extracción automática.</p>
+                <p className="text-[11px] text-surface-400 dark:text-surface-500 mt-1">Sube un PDF o foto primero para usar la extracción automática.</p>
               )}
             </div>
 

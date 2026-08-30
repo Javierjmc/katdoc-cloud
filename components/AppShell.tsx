@@ -5,6 +5,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
+import { ThemeToggle } from '@/components/ui/ThemeToggle';
 
 interface AppShellProps {
   children: React.ReactNode;
@@ -21,7 +22,7 @@ export default function AppShell({ children }: AppShellProps) {
   };
 
   return (
-    <div className="flex min-h-screen bg-surface-50">
+    <div className="flex min-h-screen bg-surface-50 dark:bg-surface-900">
 
       {/* ── SIDEBAR DESKTOP (lg+) ─────────────────────────── */}
       <aside className="
@@ -55,7 +56,8 @@ export default function AppShell({ children }: AppShellProps) {
         </nav>
 
         {/* Footer */}
-        <div className="px-3 py-4 border-t border-surface-600">
+        <div className="px-3 py-4 border-t border-surface-600 space-y-1">
+          <ThemeToggle />
           <button
             onClick={handleLogout}
             className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-surface-300 hover:text-white hover:bg-surface-600 transition-colors text-sm"
@@ -100,7 +102,8 @@ export default function AppShell({ children }: AppShellProps) {
           <SidebarLink href="/patients/new" icon="➕" label="Nuevo Paciente"  active={false} highlight                                              collapsed={!sidebarOpen} />
         </nav>
 
-        <div className="px-2 py-4 border-t border-surface-600">
+        <div className="px-2 py-4 border-t border-surface-600 space-y-1">
+          <ThemeToggle collapsed={!sidebarOpen} />
           <button
             onClick={handleLogout}
             className="w-full flex items-center justify-center gap-2 p-2.5 rounded-xl text-surface-300 hover:text-white hover:bg-surface-600 transition-colors text-sm"
@@ -135,6 +138,7 @@ export default function AppShell({ children }: AppShellProps) {
         <MobileNavItem href="/agenda"       icon="📅" label="Agenda"    active={pathname.startsWith('/agenda')} />
         <MobileNavItem href="/notifications" icon="🔔" label="Avisos"   active={pathname.startsWith('/notifications')} />
         <MobileNavItem href="/patients/new" icon="➕" label="Nuevo"     active={false} highlight />
+        <ThemeToggle onItem />
       </nav>
     </div>
   );
@@ -181,7 +185,7 @@ function MobileNavItem({ href, icon, label, active, highlight }: {
           ? 'text-brand-400'
           : active
             ? 'text-brand-400'
-            : 'text-surface-400 hover:text-white'
+            : 'text-surface-400 dark:text-surface-500 hover:text-white'
         }
       `}
     >
