@@ -12,6 +12,10 @@ export interface NotificationMessage {
   subject?: string;      // solo email
   body: string;          // texto plano
   html?: string;         // solo email
+  attachment?: {         // solo email (ej. PDF de una Recipe)
+    filename: string;
+    dataBase64: string;
+  };
 }
 
 export type SendResult =
@@ -61,8 +65,11 @@ export class WaLinkProvider implements NotificationProvider {
           subject: msg.subject ?? 'Notificación KATDOC',
           text: msg.body,
           ...(msg.html ? { html: msg.html } : {}),
+          ...(msg.attachment
+            ? { attachments: [{ filename: msg.attachment.filename, content: msg.attachment.dataBase64 }] }
+            : {}),
         }),
-        signal: AbortSignal.timeout(20000),
+        signal: AbortSignal.timeout(30000),
       });
 
       if (!res.ok) {

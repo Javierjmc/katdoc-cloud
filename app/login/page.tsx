@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import { isAuthenticated, setAuthenticated, migrateLegacySession, AUTH_STORAGE_KEY } from '@/lib/auth';
 
 const PIN_LENGTH = 4;
 const APP_PIN    = process.env.NEXT_PUBLIC_APP_PIN ?? '0000';
@@ -12,12 +13,22 @@ export default function LoginPage() {
   const [shake, setShake] = useState(false);
 
   useEffect(() => {
-    if (sessionStorage.getItem('vetcare_auth') === 'true') router.replace('/dashboard');
+    migrateLegacySession();
+    if (isAuthenticated()) router.replace('/dashboard');
+
+    // Si se loguea en otra pestaña, esta también salta al dashboard.
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === AUTH_STORAGE_KEY && e.newValue === 'true') {
+        router.replace('/dashboard');
+      }
+    };
+    window.addEventListener('storage', handleStorage);
+    return () => window.removeEventListener('storage', handleStorage);
   }, [router]);
 
   const validatePin = useCallback((attempt: string) => {
     if (attempt === APP_PIN) {
-      sessionStorage.setItem('vetcare_auth', 'true');
+      setAuthenticated();
       router.push('/dashboard');
     } else {
       setShake(true);

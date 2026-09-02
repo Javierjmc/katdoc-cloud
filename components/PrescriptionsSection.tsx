@@ -1,7 +1,10 @@
 'use client';
 // components/PrescriptionsSection.tsx
-// Recetas (prescripciones) editables por paciente, con envío por WhatsApp
-// (link wa.me prellenado) e impresión.
+// Recipes (prescripciones) editables por paciente, con:
+// - PDF real descargable (pdf-lib, S34)
+// - Envío por email (Resend) con el PDF adjunto (S34)
+// - WhatsApp manual (wa.me) con texto prellenado + peso (S34)
+// - Impresión sin "PDF en blanco" (regla @media print en globals.css)
 
 import { useState } from 'react';
 import {
@@ -11,12 +14,14 @@ import {
   deletePrescription,
   type PrescriptionInput,
 } from '@/hooks/usePrescriptions';
+import { useMedicalRecords } from '@/hooks/useMedicalRecords';
 import { useToast } from '@/components/ui/Toast';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { Field, Input, Textarea } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { EmptyState } from '@/components/ui/Badge';
 import { normalizePhoneForWhatsApp } from '@/lib/utils';
+import { appPinHeader } from '@/lib/api-auth';
 import type { Prescription, PrescriptionMedication } from '@/types';
 
 type EditorState = {
@@ -34,7 +39,7 @@ function fromPrescription(p: Prescription): EditorState {
   return {
     mode: 'edit',
     id: p.id,
-    titulo: p.titulo ?? 'Receta',
+    titulo: p.titulo ?? 'Recipe',
     fecha: p.fecha ?? '',
     medicamentos: p.medicamentos ?? [],
     notas: p.notas ?? '',
@@ -44,24 +49,32 @@ function fromPrescription(p: Prescription): EditorState {
 function createEmpty(): EditorState {
   return {
     mode: 'create',
-    titulo: 'Receta',
+    titulo: 'Recipe',
     fecha: new Date().toISOString().split('T')[0],
     medicamentos: [],
     notas: '',
   };
 }
 
-export default function PrescriptionsSection({ patientId, patientNombre, tutorTelefono }: {
+export default function PrescriptionsSection({ patientId, patientNombre, tutorTelefono, tutorEmail }: {
   patientId: string;
   patientNombre?: string;
   tutorTelefono?: string | null;
+  tutorEmail?: string | null;
 }) {
   const { prescriptions, loading, refetch } = usePrescriptions(patientId);
+  // S34: peso de la última consulta (S29) para mostrar en la Recipe.
+  const { records } = useMedicalRecords(patientId);
   const { toast } = useToast();
+  const [open, setOpen] = useState(false);
   const [editor, setEditor] = useState<EditorState | null>(null);
   const [toDelete, setToDelete] = useState<Prescription | null>(null);
   const [printTarget, setPrintTarget] = useState<Prescription | null>(null);
   const [saving, setSaving] = useState(false);
+  const [busyId, setBusyId] = useState<string | null>(null);
+
+  const lastRecord = records && records.length > 0 ? records[0] : null;
+  const pesoActual = lastRecord?.peso != null ? lastRecord.peso : null;
 
   const openCreate = () => setEditor(createEmpty());
   const openEdit = (p: Prescription) => setEditor(fromPrescription(p));
@@ -97,7 +110,7 @@ export default function PrescriptionsSection({ patientId, patientNombre, tutorTe
 
     const payload: PrescriptionInput = {
       patient_id: patientId,
-      titulo: editor.titulo.trim() || 'Receta',
+      titulo: editor.titulo.trim() || 'Recipe',
       fecha: editor.fecha || undefined,
       medicamentos,
       notas: editor.notas.trim() || undefined,
@@ -106,11 +119,11 @@ export default function PrescriptionsSection({ patientId, patientNombre, tutorTe
     if (editor.mode === 'create') {
       const { error } = await createPrescription(payload);
       if (error) { toast(`Error al guardar: ${error}`, 'error'); setSaving(false); return; }
-      toast('Receta registrada', 'success');
+      toast('Recipe registrada', 'success');
     } else if (editor.id) {
       const { error } = await updatePrescription(editor.id, payload);
       if (error) { toast(`Error al guardar: ${error}`, 'error'); setSaving(false); return; }
-      toast('Receta actualizada', 'success');
+      toast('Recipe actualizada', 'success');
     }
 
     setEditor(null);
@@ -122,42 +135,105 @@ export default function PrescriptionsSection({ patientId, patientNombre, tutorTe
     if (!toDelete) return;
     const { error } = await deletePrescription(toDelete.id);
     if (error) toast(`Error al eliminar: ${error}`, 'error');
-    else { toast('Receta eliminada', 'success'); setToDelete(null); refetch(); }
+    else { toast('Recipe eliminada', 'success'); setToDelete(null); refetch(); }
+  };
+
+  const downloadPDF = async (p: Prescription) => {
+    try {
+      const { buildRecipePdf } = await import('@/lib/recipePdf');
+      const blob = await buildRecipePdf(p, { paciente: patientNombre, peso: pesoActual });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      const nombre = `${(patientNombre ?? 'paciente').replace(/\s+/g, '-')}-recipe-${p.fecha ?? 'sin-fecha'}.pdf`;
+      a.href = url;
+      a.download = nombre;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast('PDF descargado', 'success');
+    } catch {
+      toast('No se pudo generar el PDF', 'error');
+    }
+  };
+
+  const sendEmail = async (p: Prescription) => {
+    const email = tutorEmail;
+    if (!email) { toast('El propietario no tiene email registrado', 'error'); return; }
+    setBusyId(p.id);
+    try {
+      const { buildRecipePdf, blobToBase64 } = await import('@/lib/recipePdf');
+      const blob = await buildRecipePdf(p, { paciente: patientNombre, peso: pesoActual });
+      const dataBase64 = await blobToBase64(blob);
+      const bodyText = formatMessage(p, patientNombre, pesoActual);
+      const res = await fetch('/api/notifications/email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...appPinHeader() },
+        body: JSON.stringify({
+          to: email,
+          subject: `📋 Recipe — ${patientNombre ?? 'Paciente'}`,
+          body: bodyText,
+          attachment: { filename: `recipe-${p.fecha ?? 'sin-fecha'}.pdf`, dataBase64 },
+        }),
+      });
+      const json = (await res.json()) as { ok?: boolean; simulated?: boolean; error?: string };
+      if (json.simulated) {
+        window.location.href = `mailto:${email}?subject=${encodeURIComponent('Recipe KATDOC')}&body=${encodeURIComponent(bodyText)}`;
+        toast('Abriendo el correo (Resend no configurado). Adjuntá el PDF.', 'info');
+      } else if (json.ok) {
+        toast('Recipe enviada por email con el PDF adjunto', 'success');
+      } else {
+        toast(json.error ?? 'Error al enviar el email', 'error');
+      }
+    } catch {
+      toast('No se pudo generar el PDF para enviar', 'error');
+    } finally {
+      setBusyId(null);
+    }
   };
 
   const sendWhatsApp = (p: Prescription) => {
     const phone = normalizePhoneForWhatsApp(tutorTelefono);
     if (!phone) { toast('El tutor no tiene un teléfono válido para WhatsApp', 'error'); return; }
-    const url = `https://wa.me/${phone}?text=${encodeURIComponent(formatMessage(p, patientNombre))}`;
+    const url = `https://wa.me/${phone}?text=${encodeURIComponent(formatMessage(p, patientNombre, pesoActual))}`;
     window.open(url, '_blank');
   };
 
   return (
     <div className="bg-white dark:bg-surface-800 rounded-2xl border border-surface-200 dark:border-surface-700 shadow-sm overflow-hidden">
       <div className="flex items-center justify-between px-4 py-3 border-b border-surface-100 dark:border-surface-800">
-        <h3 className="text-sm font-black text-surface-700 dark:text-surface-200">💊 Recetas</h3>
+        <button onClick={() => setOpen(o => !o)} className="flex items-center gap-2 text-left group" aria-expanded={open}>
+          <h3 className="text-sm font-black text-surface-700 dark:text-surface-200 group-hover:text-brand-600">💊 Recipes</h3>
+          <span className={`text-xs text-surface-400 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}>▾</span>
+        </button>
         <button onClick={openCreate} className="px-3 py-1.5 rounded-lg bg-brand-500 hover:bg-brand-600 text-white text-xs font-bold transition-colors">
-          + Nueva receta
+          + Nueva recipe
         </button>
       </div>
 
+      {open && (
       <div className="p-4 space-y-2">
         {loading ? (
           <div className="space-y-2">{[1, 2].map(i => <div key={i} className="h-14 rounded-xl bg-surface-100 dark:bg-surface-800 animate-pulse" />)}</div>
         ) : prescriptions.length === 0 ? (
-          <EmptyState icon="💊" title="Sin recetas" subtitle="Crea una receta con uno o varios medicamentos."
-            action={<Button size="sm" onClick={openCreate}>Nueva receta</Button>} />
+          <EmptyState icon="💊" title="Sin recipes" subtitle="Crea una recipe con uno o varios medicamentos."
+            action={<Button size="sm" onClick={openCreate}>Nueva recipe</Button>} />
         ) : (
           prescriptions.map(p => (
             <div key={p.id} className="p-3 rounded-xl border border-surface-200 dark:border-surface-700">
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
-                  <p className="font-bold text-sm text-surface-800 dark:text-white">{p.titulo ?? 'Receta'}</p>
+                  <p className="font-bold text-sm text-surface-800 dark:text-white">{p.titulo ?? 'Recipe'}</p>
                   <p className="text-xs text-surface-500 dark:text-surface-400">{p.fecha ? new Date(p.fecha).toLocaleDateString('es-VE') : 'Sin fecha'} · {p.medicamentos.length} medicamento{p.medicamentos.length !== 1 ? 's' : ''}</p>
+                  {pesoActual != null && (
+                    <p className="text-xs text-surface-400 dark:text-surface-500">⚖️ Peso: {pesoActual} kg</p>
+                  )}
                 </div>
                 <div className="flex gap-1 shrink-0">
                   <button onClick={() => sendWhatsApp(p)} className="px-2 py-1 rounded-lg bg-green-50 hover:bg-green-100 text-green-700 text-xs font-semibold">📲 WhatsApp</button>
-                  <button onClick={() => setPrintTarget(p)} className="px-2 py-1 rounded-lg bg-surface-100 dark:bg-surface-800 hover:bg-surface-200 dark:hover:bg-surface-700 text-surface-600 dark:text-surface-300 text-xs font-semibold">🖨</button>
+                  <button onClick={() => sendEmail(p)} disabled={busyId === p.id} className="px-2 py-1 rounded-lg bg-surface-100 dark:bg-surface-800 hover:bg-surface-200 dark:hover:bg-surface-700 text-surface-600 dark:text-surface-300 text-xs font-semibold disabled:opacity-50">✉️ Email</button>
+                  <button onClick={() => downloadPDF(p)} className="px-2 py-1 rounded-lg bg-brand-50 hover:bg-brand-100 text-brand-600 text-xs font-semibold">⬇️ PDF</button>
+                  <button onClick={() => setPrintTarget(p)} className="px-2 py-1 rounded-lg bg-surface-100 dark:bg-surface-800 hover:bg-surface-200 dark:hover:bg-surface-700 text-surface-600 dark:text-surface-300 text-xs font-semibold" aria-label="Imprimir">🖨</button>
                   <button onClick={() => openEdit(p)} className="w-8 h-8 rounded-lg bg-surface-100 dark:bg-surface-800 hover:bg-surface-200 dark:hover:bg-surface-700 text-surface-600 dark:text-surface-300 text-xs" aria-label="Editar">✏️</button>
                   <button onClick={() => setToDelete(p)} className="w-8 h-8 rounded-lg bg-red-50 hover:bg-red-100 text-red-500 text-xs" aria-label="Eliminar">🗑️</button>
                 </div>
@@ -166,16 +242,17 @@ export default function PrescriptionsSection({ patientId, patientNombre, tutorTe
           ))
         )}
       </div>
+      )}
 
       {/* Editor */}
       {editor && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={() => !saving && setEditor(null)}>
           <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-3xl bg-white dark:bg-surface-800 border border-surface-200 dark:border-surface-700 shadow-2xl p-6 space-y-3" onClick={e => e.stopPropagation()}>
-            <h3 className="text-base font-bold text-surface-800 dark:text-white">{editor.mode === 'create' ? 'Nueva receta' : 'Editar receta'}</h3>
+            <h3 className="text-base font-bold text-surface-800 dark:text-white">{editor.mode === 'create' ? 'Nueva recipe' : 'Editar recipe'}</h3>
 
             <div className="grid grid-cols-2 gap-3">
               <Field label="Título">
-                <Input value={editor.titulo} onChange={e => setField('titulo', e.target.value)} placeholder="Receta" />
+                <Input value={editor.titulo} onChange={e => setField('titulo', e.target.value)} placeholder="Recipe" />
               </Field>
               <Field label="Fecha">
                 <Input type="date" value={editor.fecha} onChange={e => setField('fecha', e.target.value)} />
@@ -233,7 +310,7 @@ export default function PrescriptionsSection({ patientId, patientNombre, tutorTe
 
             <div className="flex gap-2 pt-2">
               <Button variant="secondary" fullWidth onClick={() => setEditor(null)} disabled={saving}>Cancelar</Button>
-              <Button fullWidth loading={saving} onClick={handleSave}>Guardar receta</Button>
+              <Button fullWidth loading={saving} onClick={handleSave}>Guardar recipe</Button>
             </div>
           </div>
         </div>
@@ -241,8 +318,8 @@ export default function PrescriptionsSection({ patientId, patientNombre, tutorTe
 
       <ConfirmDialog
         open={!!toDelete}
-        title="Eliminar receta"
-        message={`¿Eliminar "${toDelete?.titulo ?? 'esta receta'}"? Esta acción no se puede deshacer.`}
+        title="Eliminar recipe"
+        message={`¿Eliminar "${toDelete?.titulo ?? 'esta recipe'}"? Esta acción no se puede deshacer.`}
         confirmLabel="Eliminar"
         danger
         onConfirm={handleDelete}
@@ -256,7 +333,8 @@ export default function PrescriptionsSection({ patientId, patientNombre, tutorTe
             <div className="print-area text-sm text-surface-800 dark:text-white">
               <div className="text-center border-b border-surface-200 dark:border-surface-700 pb-3 mb-3">
                 <p className="font-black text-lg">🐾 KATDOC</p>
-                <p className="text-xs text-surface-500 dark:text-surface-400">Receta {patientNombre ? `— ${patientNombre}` : ''}</p>
+                <p className="text-xs text-surface-500 dark:text-surface-400">Recipe {patientNombre ? `— ${patientNombre}` : ''}</p>
+                {pesoActual != null && <p className="text-xs text-surface-500 dark:text-surface-400">⚖️ Peso: {pesoActual} kg</p>}
                 <p className="text-xs text-surface-500 dark:text-surface-400">{printTarget.fecha ? new Date(printTarget.fecha).toLocaleDateString('es-VE') : ''}</p>
               </div>
               {printTarget.medicamentos.map((m, i) => (
@@ -283,13 +361,14 @@ export default function PrescriptionsSection({ patientId, patientNombre, tutorTe
   );
 }
 
-function formatMessage(p: Prescription, patientNombre?: string): string {
+function formatMessage(p: Prescription, patientNombre?: string, peso?: number | null): string {
   const lines: string[] = [
-    '📋 RECETA',
+    '📋 RECIPE',
     `🐾 ${patientNombre ?? 'Paciente'}`,
     `📅 ${p.fecha ? new Date(p.fecha).toLocaleDateString('es-VE') : ''}`,
-    '',
   ];
+  if (peso != null) lines.push(`⚖️ Peso: ${peso} kg`);
+  lines.push('');
   p.medicamentos.forEach((m, i) => {
     lines.push(`${i + 1}) ${m.nombre}`);
     if (m.presentacion) lines.push(`   Presentación: ${m.presentacion}`);

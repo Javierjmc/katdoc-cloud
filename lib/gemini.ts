@@ -9,8 +9,30 @@
 import type { LabAnalyte } from '@/types';
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-const MODEL = 'gemini-2.0-flash';
-const ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`;
+const TIMEOUT_MS = 60000;
+
+// Modelos a probar en orden. Si uno devuelve "not found" (retirado), se
+// continúa con el siguiente. `gemini-2.5-flash` y `gemini-flash-latest`
+// verificados como vigentes (2026-09). Revisar en
+// https://ai.google.dev/gemini-api/docs/models
+const MODELS = ['gemini-2.5-flash', 'gemini-flash-latest'];
+
+export type GeminiErrorCode =
+  | 'no_key'
+  | 'auth'
+  | 'rate_limit'
+  | 'model_not_found'
+  | 'gemini';
+
+export class GeminiError extends Error {
+  code: GeminiErrorCode;
+
+  constructor(message: string, code: GeminiErrorCode) {
+    super(message);
+    this.name = 'GeminiError';
+    this.code = code;
+  }
+}
 
 const PROMPT = `
 Eres un asistente de veterinaria. Analiza el examen de laboratorio (puede ser PDF o foto).
@@ -45,50 +67,129 @@ export type ParsedExam = {
 
 /**
  * Envía un archivo (PDF o imagen) a Gemini y devuelve los analitos estructurados.
- * @throws Error si no hay API key configurada o falla la llamada.
+ * @throws GeminiError con un mensaje accionable por el usuario.
  */
 export async function parseExamWithGemini(
   file: { mimeType: string; data: ArrayBuffer }
 ): Promise<ParsedExam> {
   if (!GEMINI_API_KEY) {
-    throw new Error('GEMINI_API_KEY no configurada');
+    throw new GeminiError(
+      'GEMINI_API_KEY no configurada — pedile al administrador que la active en .env.local / Vercel.',
+      'no_key'
+    );
   }
 
   const base64 = Buffer.from(file.data).toString('base64');
+  let lastError: unknown = null;
 
-  const res = await fetch(ENDPOINT, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-goog-api-key': GEMINI_API_KEY,
-    },
-    body: JSON.stringify({
-      contents: [
-        {
-          role: 'user',
-          parts: [
-            { inline_data: { mime_type: file.mimeType, data: base64 } },
-            { text: PROMPT },
-          ],
-        },
-      ],
-    }),
-    signal: AbortSignal.timeout(30000),
-  });
-
-  if (!res.ok) {
-    const body = await res.text().catch(() => '');
-    throw new Error(`Gemini ${res.status}: ${body.slice(0, 200)}`);
+  for (const model of MODELS) {
+    try {
+      const text = await requestModel(model, base64, file.mimeType);
+      return sanitize(parseJsonLoose(text));
+    } catch (e) {
+      lastError = e;
+      if (e instanceof GeminiError && e.code === 'model_not_found') {
+        // Probar con el siguiente modelo de la lista.
+        continue;
+      }
+      // Otros errores (auth, rate_limit, gemini) no cambian de modelo: cortar.
+      throw e;
+    }
   }
 
-  const json = (await res.json()) as {
-    candidates?: { content?: { parts?: { text?: string }[] } }[];
-  };
-  const text = json.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
+  throw (
+    lastError ??
+    new GeminiError(
+      `Ningún modelo disponible respondió (${MODELS.join(', ')}). Revisá la lista vigente de Gemini.`,
+      'model_not_found'
+    )
+  );
+}
 
-  if (!text) throw new Error('Gemini no devolvió contenido');
+/** Llama a un modelo puntual y devuelve el texto crudo de la respuesta. */
+async function requestModel(
+  model: string,
+  base64: string,
+  mimeType: string
+): Promise<string> {
+  const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
 
-  return sanitize(parseJsonLoose(text));
+  let res: Response;
+  try {
+    res = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-goog-api-key': GEMINI_API_KEY ?? '',
+      },
+      body: JSON.stringify({
+        contents: [
+          {
+            role: 'user',
+            parts: [
+              { inline_data: { mime_type: mimeType, data: base64 } },
+              { text: PROMPT },
+            ],
+          },
+        ],
+      }),
+      signal: AbortSignal.timeout(TIMEOUT_MS),
+    });
+  } catch (e) {
+    const timedOut = e instanceof Error && e.name === 'TimeoutError';
+    throw new GeminiError(
+      timedOut
+        ? 'Gemini tardó demasiado en responder (60 s). Probá con un archivo más liviano.'
+        : 'Error de red al contactar a Gemini. Reintentá en un momento.',
+      'gemini'
+    );
+  }
+
+  const rawBody = await res.text().catch(() => '');
+  if (!res.ok) {
+    let bodyMsg = rawBody.slice(0, 200);
+    try {
+      const json = JSON.parse(rawBody);
+      bodyMsg = json?.error?.message ?? bodyMsg;
+    } catch {
+      /* body no es JSON */
+    }
+    const lower = `${res.status} ${bodyMsg}`.toLowerCase();
+
+    if (res.status === 401 || res.status === 403) {
+      throw new GeminiError(
+        'API key de Gemini inválida o sin permisos. Revisá GEMINI_API_KEY.',
+        'auth'
+      );
+    }
+    if (res.status === 429) {
+      throw new GeminiError(
+        'Límite de Gemini alcanzado (429). Esperá ~1 minuto y reintentá.',
+        'rate_limit'
+      );
+    }
+    if (res.status === 404 || lower.includes('not found') || lower.includes('models/')) {
+      throw new GeminiError(
+        `Modelo de IA no disponible: ${model}.`,
+        'model_not_found'
+      );
+    }
+    throw new GeminiError(`Gemini ${res.status}: ${bodyMsg.slice(0, 160)}`, 'gemini');
+  }
+
+  try {
+    const json = JSON.parse(rawBody) as {
+      candidates?: { content?: { parts?: { text?: string }[] } }[];
+    };
+    const text = json.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
+    if (!text) throw new Error('Gemini no devolvió contenido');
+    return text;
+  } catch (e) {
+    throw new GeminiError(
+      'Gemini respondió con un formato inesperado. Reintentá.',
+      'gemini'
+    );
+  }
 }
 
 /** Convierte la respuesta (a veces con ```json ... ``` o texto extra) a objeto. */

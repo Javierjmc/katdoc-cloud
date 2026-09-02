@@ -68,6 +68,7 @@ function createEmpty(): EditorState {
 export default function LabExamsSection({ patientId }: { patientId: string }) {
   const { exams, loading, refetch } = useLaboratoryExams(patientId);
   const { toast } = useToast();
+  const [open, setOpen] = useState(false);
   const [editor, setEditor] = useState<EditorState | null>(null);
   const [expanded, setExpanded] = useState<string | null>(null);
   const [toDelete, setToDelete] = useState<LaboratoryExam | null>(null);
@@ -149,6 +150,7 @@ export default function LabExamsSection({ patientId }: { patientId: string }) {
   const handleSave = async () => {
     if (!editor) return;
     if (!editor.nombre_examen.trim()) { toast('El nombre del examen es obligatorio', 'error'); return; }
+    if (!editor.fecha_examen) { toast('La fecha del examen es obligatoria', 'error'); return; }
     setSaving(true);
 
     const analitos = editor.analitos.filter(a => a.nombre.trim() !== '');
@@ -185,6 +187,9 @@ export default function LabExamsSection({ patientId }: { patientId: string }) {
           file_url: url,
           file_type: editor.file.type,
         });
+        toast('Documento cargado correctamente', 'success');
+      } else {
+        toast('El examen se guardó, pero el archivo no se pudo cargar.', 'error');
       }
       setUploading(false);
     }
@@ -204,7 +209,10 @@ export default function LabExamsSection({ patientId }: { patientId: string }) {
   return (
     <div className="bg-white dark:bg-surface-800 rounded-2xl border border-surface-200 dark:border-surface-700 shadow-sm overflow-hidden">
       <div className="flex items-center justify-between px-4 py-3 border-b border-surface-100 dark:border-surface-800">
-        <h3 className="text-sm font-black text-surface-700 dark:text-surface-200">🔬 Exámenes de laboratorio</h3>
+        <button onClick={() => setOpen(o => !o)} className="flex items-center gap-2 text-left group" aria-expanded={open}>
+          <h3 className="text-sm font-black text-surface-700 dark:text-surface-200 group-hover:text-brand-600">🔬 Exámenes de laboratorio</h3>
+          <span className={`text-xs text-surface-400 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}>▾</span>
+        </button>
         <button
           onClick={openCreate}
           className="px-3 py-1.5 rounded-lg bg-brand-500 hover:bg-brand-600 text-white text-xs font-bold transition-colors"
@@ -213,6 +221,7 @@ export default function LabExamsSection({ patientId }: { patientId: string }) {
         </button>
       </div>
 
+      {open && (
       <div className="p-4 space-y-2">
         {loading ? (
           <div className="space-y-2">{[1, 2].map(i => <div key={i} className="h-14 rounded-xl bg-surface-100 dark:bg-surface-800 animate-pulse" />)}</div>
@@ -291,6 +300,7 @@ export default function LabExamsSection({ patientId }: { patientId: string }) {
           ))
         )}
       </div>
+      )}
 
       {/* Editor / wizard */}
       {editor && (
@@ -305,7 +315,7 @@ export default function LabExamsSection({ patientId }: { patientId: string }) {
               <Field label="Laboratorio de origen" className="col-span-2 sm:col-span-1">
                 <Input value={editor.laboratorio_origen} onChange={e => setField('laboratorio_origen', e.target.value)} placeholder="Laboratorio externo" />
               </Field>
-              <Field label="Fecha del examen">
+              <Field label="Fecha del examen" required>
                 <Input type="date" value={editor.fecha_examen} onChange={e => setField('fecha_examen', e.target.value)} />
               </Field>
               <Field label="Próximo control">

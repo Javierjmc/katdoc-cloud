@@ -32,7 +32,7 @@ export function useNotificationConfig() {
 // ─── Funciones ──────────────────────────────────────────────
 export async function updateNotificationConfig(
   id: string,
-  data: Partial<Pick<NotificationConfig, 'dias_antes' | 'dias_despues' | 'enabled'>>
+  data: Partial<Pick<NotificationConfig, 'dias_antes' | 'dias_despues' | 'enabled' | 'email_auto' | 'whatsapp_auto'>>
 ): Promise<{ error: string | null }> {
   const { error } = await supabase
     .from('notification_config')

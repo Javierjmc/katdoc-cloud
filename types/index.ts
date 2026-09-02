@@ -66,8 +66,23 @@ export type Vaccination = {
   lote?: string;
   dosis?: string;
   observaciones?: string;
+  /** 'vacuna' | 'desparasitacion' (S40). Legacy sin valor = 'vacuna'. */
+  categoria?: 'vacuna' | 'desparasitacion';
   created_at: string;
 };
+
+// Catálogo rápido de desparasitantes (S40)
+export const DESPARASITANTES = [
+  'Drontal Plus (Praziquantel + Pirantel + Febantel)',
+  'Milbemax (Milbemicina + Praziquantel)',
+  'Ivermectina',
+  'Fenbendazol',
+  'Selamectina',
+  'Moxidectina',
+  'Piperazina',
+  'Praziquantel',
+  'Otro',
+] as const;
 
 export type LabAnalyte = {
   nombre: string;
@@ -119,23 +134,35 @@ export type EcografiaMedicion = {
   unidad?: string;
 };
 
+export type EcografiaArchivo = {
+  url: string;
+  nombre?: string;
+  tipo?: string;
+};
+
 export type Ecografia = {
   id: string;
   patient_id: string;
   record_id?: string;
   fecha?: string;
-  organo?: string;
+  organo?: string; // legacy (no se captura en la UI desde S35)
   hallazgos?: string;
-  conclusiones?: string;
-  mediciones: EcografiaMedicion[];
+  conclusiones?: string; // legacy
+  mediciones: EcografiaMedicion[]; // legacy
   imagenes: string[];
+  archivos?: EcografiaArchivo[]; // PDFs y otros adjuntos (S35)
   created_at: string;
 };
 
 export type Appointment = {
   id: string;
-  patient_id: string;
+  /** null cuando la cita es "libre" (paciente sin ficha, S38). */
+  patient_id?: string | null;
   tutor_id?: string;
+  /** Datos de cita libre (cuando no hay ficha de paciente). */
+  nombre_paciente?: string;
+  tutor_nombre?: string;
+  telefono_tutor?: string;
   fecha: string;
   hora?: string;
   motivo?: string;
@@ -161,6 +188,10 @@ export type NotificationConfig = {
   dias_antes: number;
   dias_despues: number;
   enabled: boolean;
+  /** Enviar automáticamente por email cuando el recordatorio entra en ventana (S39). */
+  email_auto?: boolean;
+  /** Reservado: envío automático por WhatsApp (requiere API de WhatsApp Business). */
+  whatsapp_auto?: boolean;
   created_at: string;
   updated_at: string;
 };
@@ -202,6 +233,7 @@ export type MedicalRecord = {
   // Motivo
   motivo_consulta?: string;
   // Constantes vitales
+  peso?: number;
   f_respiratoria?: string;
   f_cardiaca?: string;
   temperatura?: number;

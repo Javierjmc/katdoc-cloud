@@ -124,3 +124,31 @@ export async function uploadEcografiaImage(
 
   return data.publicUrl;
 }
+
+/**
+ * Sube un archivo (PDF) de una ecografía/rayos X al bucket `ecografias`
+ * (S35). Devuelve { url } o null si falla.
+ */
+export async function uploadEcografiaArchivo(
+  file: File,
+  ecografiaId: string,
+  nombre: string
+): Promise<{ url: string; nombre: string; tipo: string } | null> {
+  const ext = (file.name.split('.').pop() || 'bin').toLowerCase();
+  const filePath = `${ecografiaId}/${nombre}.${ext}`;
+
+  const { error } = await supabase.storage
+    .from('ecografias')
+    .upload(filePath, file, { upsert: true, contentType: file.type || undefined });
+
+  if (error) {
+    console.error('Error subiendo archivo de ecografía:', error.message);
+    return null;
+  }
+
+  const { data } = supabase.storage
+    .from('ecografias')
+    .getPublicUrl(filePath);
+
+  return { url: data.publicUrl, nombre: file.name, tipo: file.type };
+}

@@ -37,8 +37,14 @@ export const patientFormSchema = z.object({
 });
 
 // ─── Cita ────────────────────────────────────────────────────
+// S38: patient_id es opcional — una cita puede ser "libre" con
+// nombre_paciente escrito a mano. La validación de "modo libre" se hace
+// en el componente (fecha/hora en el pasado se valida con isPastDateTime).
 export const appointmentSchema = z.object({
-  patient_id: z.string().uuid('Selecciona un paciente'),
+  patient_id:      z.string().trim().optional(),
+  nombre_paciente: z.string().trim().max(100).optional(),
+  tutor_nombre:    z.string().trim().max(120).optional(),
+  telefono_tutor:  z.string().trim().max(20).optional(),
   fecha:      z.string().trim().refine(v => !Number.isNaN(Date.parse(v)), 'La fecha es obligatoria'),
   hora:       z.string().trim().regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'Hora inválida').optional().or(z.literal('')),
   motivo:     z.string().trim().max(200).optional(),

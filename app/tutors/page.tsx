@@ -1,13 +1,14 @@
 'use client';
 import { useState, useEffect, useMemo } from 'react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { supabase } from '@/lib/supabase';
 import AppShell from '@/components/AppShell';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useLoadMore } from '@/hooks/useLoadMore';
+import { useAuthGuard } from '@/hooks/useAuthGuard';
 import { LoadMoreButton } from '@/components/ui';
+import { PageLoader } from '@/components/ui/Badge';
 
 type TutorWithPatients = {
   id: string; nombre: string; cedula: string;
@@ -16,17 +17,12 @@ type TutorWithPatients = {
 };
 
 export default function TutorsPage() {
-  const router = useRouter();
   const [tutors, setTutors]     = useState<TutorWithPatients[]>([]);
   const [loading, setLoading]   = useState(true);
   const [search, setSearch]     = useState('');
   const [expanded, setExpanded] = useState<string | null>(null);
   const debouncedSearch = useDebounce(search, 250);
-
-  useEffect(() => {
-    const auth = sessionStorage.getItem('vetcare_auth');
-    if (auth !== 'true') router.replace('/login');
-  }, [router]);
+  const { ready } = useAuthGuard();
 
   useEffect(() => {
     supabase.from('tutors').select('*, patients(id, nombre, especie, photo_url, raza)').order('nombre')
@@ -46,6 +42,8 @@ export default function TutorsPage() {
   const { visible, hasMore, loadMore } = useLoadMore(filtered, PAGE_SIZE);
 
   const emoji: Record<string, string> = { Canino:'🐶', Felino:'🐱', Exótico:'🦜', Bovino:'🐄', Equino:'🐴', Otro:'🐾' };
+
+  if (!ready) return <PageLoader />;
 
   // Construir query string con datos del tutor para pre-rellenar el formulario
   const buildNewPetUrl = (t: TutorWithPatients) => {

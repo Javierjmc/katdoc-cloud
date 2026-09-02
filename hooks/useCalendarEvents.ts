@@ -31,12 +31,14 @@ type ApptRow = {
   hora?: string | null;
   motivo?: string | null;
   estado: string;
+  nombre_paciente?: string | null;
   patient: MaybePatient;
 };
 
 type VacRow = {
   id: string;
   vacuna: string;
+  categoria?: string | null;
   fecha_proxima_dosis: string;
   patient: MaybePatient;
 };
@@ -69,12 +71,12 @@ export function useCalendarEvents(from: string, to: string) {
     const [appt, vac, exam] = await Promise.all([
       supabase
         .from('appointments')
-        .select('id, fecha, hora, motivo, estado, patient:patients(id, nombre)')
+        .select('id, fecha, hora, motivo, estado, nombre_paciente, patient:patients(id, nombre)')
         .gte('fecha', from)
         .lte('fecha', to),
       supabase
         .from('vaccinations')
-        .select('id, vacuna, fecha_proxima_dosis, patient:patients!inner(id, nombre, active)')
+        .select('id, vacuna, categoria, fecha_proxima_dosis, patient:patients!inner(id, nombre, active)')
         .not('fecha_proxima_dosis', 'is', null)
         .eq('patient.active', true)
         .gte('fecha_proxima_dosis', from)
@@ -101,21 +103,24 @@ export function useCalendarEvents(from: string, to: string) {
         type: 'cita' as const,
         fecha: a.fecha,
         hora: a.hora ?? undefined,
-        titulo: a.motivo || 'Cita',
+        titulo: a.motivo || (p?.nombre ?? a.nombre_paciente ?? 'Cita'),
         estado: a.estado,
         patientId: p?.id ?? '',
-        patientNombre: p?.nombre ?? '—',
+        patientNombre: p?.nombre ?? a.nombre_paciente ?? 'Paciente sin ficha',
       };
     });
 
     const vacunas: CalendarEvent[] = ((vac.data ?? []) as VacRow[]).map(v => {
       const p = asPatient(v.patient);
+      const tipo = (v.categoria === 'vacuna' || v.categoria === 'desparasitacion'
+        ? v.categoria
+        : guessTipo(v.vacuna)) as CalendarEvent['type'];
       return {
         id: v.id,
-        type: guessTipo(v.vacuna),
+        type: tipo,
         fecha: v.fecha_proxima_dosis,
         titulo: v.vacuna,
-        subtitulo: 'Próxima dosis',
+        subtitulo: tipo === 'desparasitacion' ? 'Próxima desparasitación' : 'Próxima dosis',
         patientId: p?.id ?? '',
         patientNombre: p?.nombre ?? '—',
       };

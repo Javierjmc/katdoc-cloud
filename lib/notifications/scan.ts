@@ -38,21 +38,26 @@ export async function scanReminders(): Promise<ScanResult> {
   // 2. Vacunas con próxima dosis (solo pacientes activos)
   const { data: vaccinations, error: vacErr } = await supabase
     .from('vaccinations')
-    .select('id, vacuna, fecha_proxima_dosis, patient:patients!inner(id, nombre, active, tutor:tutors!inner(id, nombre, telefono, email))')
+    .select('id, vacuna, categoria, fecha_proxima_dosis, patient:patients!inner(id, nombre, active, tutor:tutors!inner(id, nombre, telefono, email))')
     .not('fecha_proxima_dosis', 'is', null)
     .eq('patient.active', true);
 
   if (vacErr) throw new Error(`Error leyendo vacunas: ${vacErr.message}`);
 
   for (const v of (vaccinations ?? []) as unknown as {
-    vacuna: string; fecha_proxima_dosis: string;
+    vacuna: string; categoria?: string | null; fecha_proxima_dosis: string;
     patient: { id: string; nombre: string; tutor: { id: string; nombre: string; telefono?: string; email?: string } };
   }[]) {
-    const tipo = guessTipo(v.vacuna);
+    // S40: usar la categoría explícita si existe; fallback por keywords.
+    const tipo = v.categoria === 'desparasitacion' || v.categoria === 'vacuna'
+      ? v.categoria
+      : guessTipo(v.vacuna);
     const cfg = configMap.get(tipo);
     if (!cfg) continue;
 
-    const titulo = `Vacuna ${v.vacuna} próxima`;
+    const titulo = tipo === 'desparasitacion'
+      ? `Desparasitación ${v.vacuna} próxima`
+      : `Vacuna ${v.vacuna} próxima`;
     const ok = await insertIfInWindow({
       patient_id: v.patient.id,
       tutor_id: v.patient.tutor.id,

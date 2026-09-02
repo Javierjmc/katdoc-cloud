@@ -49,7 +49,7 @@
   }
 }
 
-/* ── Impresión del reporte del paciente (S12) ─────────────── */
+/* ── Impresión del reporte del paciente (S12) y de las Recipes (S34) ── */
 @media print {
   body { background: white !important; }
   body * { visibility: hidden; }
@@ -63,6 +63,17 @@
     color: black;
     padding: 0;
     font-size: 12px;
+  }
+  .print-area, .print-area * { visibility: visible; }
+  .print-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    background: white;
+    color: black;
+    font-size: 12px;
+    padding: 8mm;
   }
   .no-print { display: none !important; }
   .print-pagebreak { break-before: page; }

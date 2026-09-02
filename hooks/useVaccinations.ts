@@ -8,8 +8,8 @@ import type { Vaccination } from '@/types';
 
 export type VaccinationInput = Omit<Vaccination, 'id' | 'created_at'>;
 
-// ─── Hook: vacunas de un paciente ───────────────────────────
-export function useVaccinations(patientId: string | undefined) {
+// ─── Hook: vacunas (o desparasitaciones) de un paciente ─────
+export function useVaccinations(patientId: string | undefined, categoria?: 'vacuna' | 'desparasitacion') {
   const [vaccinations, setVaccinations] = useState<Vaccination[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError]     = useState<string | null>(null);
@@ -18,16 +18,27 @@ export function useVaccinations(patientId: string | undefined) {
     if (!patientId) { setLoading(false); return; }
     setLoading(true);
 
-    const { data, error: err } = await supabase
+    let query = supabase
       .from('vaccinations')
       .select('*')
-      .eq('patient_id', patientId)
+      .eq('patient_id', patientId);
+
+    if (categoria) {
+      // Los registros legacy sin categoria se tratan como 'vacuna'.
+      if (categoria === 'vacuna') {
+        query = query.or(`categoria.eq.vacuna,categoria.is.null`);
+      } else {
+        query = query.eq('categoria', categoria);
+      }
+    }
+
+    const { data, error: err } = await query
       .order('fecha_aplicacion', { ascending: false });
 
     if (err) setError(err.message);
     else     setVaccinations((data ?? []) as Vaccination[]);
     setLoading(false);
-  }, [patientId]);
+  }, [patientId, categoria]);
 
   useEffect(() => { fetchVaccinations(); }, [fetchVaccinations]);
 

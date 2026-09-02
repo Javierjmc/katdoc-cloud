@@ -102,6 +102,7 @@ export default function RecordDetailPage() {
             <Card>
               <h3 className="section-title">❤️ Constantes Vitales</h3>
               <div className="grid grid-cols-2 gap-2 mt-2">
+                <VitalRow label="Peso"                value={record.peso?.toString()} unit="kg" />
                 <VitalRow label="Frec. Respiratoria" value={record.f_respiratoria} unit="frpm" />
                 <VitalRow label="Frec. Cardíaca"     value={record.f_cardiaca}     unit="fcpm" />
                 <VitalRow label="Temperatura"         value={record.temperatura?.toString()} unit="°C" />

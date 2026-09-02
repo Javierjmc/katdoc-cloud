@@ -1,6 +1,5 @@
 'use client';
 import { useState, useEffect, useMemo } from 'react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { supabase } from '@/lib/supabase';
@@ -10,17 +9,18 @@ import { ESPECIES } from '@/types';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { useLoadMore } from '@/hooks/useLoadMore';
+import { useAuthGuard } from '@/hooks/useAuthGuard';
 import { LoadMoreButton } from '@/components/ui';
+import { PageLoader } from '@/components/ui/Badge';
 import { useCalendarEvents, type CalendarEvent } from '@/hooks/useCalendarEvents';
 
 export default function DashboardPage() {
-  const router = useRouter();
   const [rows, setRows]       = useState<DashboardRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch]   = useState('');
   const [filterEspecie, setFilterEspecie] = useLocalStorage('dashboard_especie', '');
   const debouncedSearch = useDebounce(search, 250);
-
+  const { ready } = useAuthGuard();
   // Próximos eventos (7 días)
   const today = new Date();
   const weekFrom = toYMD(today);
@@ -31,11 +31,6 @@ export default function DashboardPage() {
     if (e.type !== 'cita') return true;
     return e.estado === 'programada' || e.estado === 'confirmada';
   }), [events]);
-
-  useEffect(() => {
-    const auth = sessionStorage.getItem('vetcare_auth');
-    if (auth !== 'true') router.replace('/login');
-  }, [router]);
 
   useEffect(() => {
     supabase.from('dashboard_search').select('*').eq('active', true).order('fecha_consulta', { ascending: false })
@@ -57,6 +52,8 @@ export default function DashboardPage() {
   const uniquePatients = new Set(rows.map(r => r.patient_id)).size;
   const uniqueTutors   = new Set(rows.map(r => r.tutor_id)).size;
   const totalRecords   = rows.filter(r => r.record_id).length;
+
+  if (!ready) return <PageLoader />;
 
   return (
     <AppShell>
@@ -94,26 +91,38 @@ export default function DashboardPage() {
             <p className="text-sm text-surface-400 dark:text-surface-500 py-3 text-center">Sin citas ni controles pendientes esta semana.</p>
           ) : (
             <div className="space-y-2">
-              {upcoming.map(e => (
-                <Link key={`${e.type}-${e.id}`} href={`/patients/${e.patientId}`}
-                  className="flex items-center gap-3 p-2.5 rounded-xl border border-surface-200 dark:border-surface-700 hover:border-brand-400 hover:bg-brand-50/40 transition-colors">
-                  <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${EVENT_META[e.type].dot}`} />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <p className="font-bold text-sm text-surface-800 dark:text-white truncate">{e.titulo}</p>
-                      <span className={`text-[10px] px-2 py-0.5 rounded-full border font-bold ${EVENT_META[e.type].badge}`}>{EVENT_META[e.type].label}</span>
+              {upcoming.map(e => {
+                const inner = (
+                  <>
+                    <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${EVENT_META[e.type].dot}`} />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="font-bold text-sm text-surface-800 dark:text-white truncate">{e.titulo}</p>
+                        <span className={`text-[10px] px-2 py-0.5 rounded-full border font-bold ${EVENT_META[e.type].badge}`}>{EVENT_META[e.type].label}</span>
+                      </div>
+                      <p className="text-xs text-surface-500 dark:text-surface-400 mt-0.5 truncate">
+                        🐾 {e.patientNombre}
+                        <span className="text-surface-300"> · </span>
+                        {new Date(e.fecha + 'T12:00:00').toLocaleDateString('es-VE', { weekday: 'short', day: 'numeric', month: 'short' })}
+                        {e.hora && <span className="text-surface-300"> · </span>}
+                        {e.hora && <span>🕐 {e.hora}</span>}
+                      </p>
                     </div>
-                    <p className="text-xs text-surface-500 dark:text-surface-400 mt-0.5 truncate">
-                      🐾 {e.patientNombre}
-                      <span className="text-surface-300"> · </span>
-                      {new Date(e.fecha + 'T12:00:00').toLocaleDateString('es-VE', { weekday: 'short', day: 'numeric', month: 'short' })}
-                      {e.hora && <span className="text-surface-300"> · </span>}
-                      {e.hora && <span>🕐 {e.hora}</span>}
-                    </p>
+                    <span className="text-surface-300 text-lg">›</span>
+                  </>
+                );
+                // S38: eventos sin ficha (cita libre) no navegan a un paciente.
+                return e.patientId ? (
+                  <Link key={`${e.type}-${e.id}`} href={`/patients/${e.patientId}`}
+                    className="flex items-center gap-3 p-2.5 rounded-xl border border-surface-200 dark:border-surface-700 hover:border-brand-400 hover:bg-brand-50/40 transition-colors">
+                    {inner}
+                  </Link>
+                ) : (
+                  <div key={`${e.type}-${e.id}`} className="flex items-center gap-3 p-2.5 rounded-xl border border-surface-200 dark:border-surface-700">
+                    {inner}
                   </div>
-                  <span className="text-surface-300 text-lg">›</span>
-                </Link>
-              ))}
+                );
+              })}
             </div>
           )}
         </section>

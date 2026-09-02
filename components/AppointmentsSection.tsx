@@ -10,6 +10,7 @@ import { Field, Input, Textarea, Select } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { EmptyState } from '@/components/ui/Badge';
 import { appointmentSchema, validateSchema, type FieldErrors } from '@/lib/schemas';
+import { isPastDateTime } from '@/lib/utils';
 import { APPOINTMENT_STATES, type Appointment, type AppointmentState } from '@/types';
 
 type EditorState = {
@@ -58,6 +59,7 @@ function stateBadge(estado: AppointmentState) {
 export default function AppointmentsSection({ patientId, tutorId }: { patientId: string; tutorId?: string }) {
   const { appointments, loading, refetch } = useAppointments({ patientId });
   const { toast } = useToast();
+  const [open, setOpen] = useState(true);
   const [editor, setEditor] = useState<EditorState | null>(null);
   const [toDelete, setToDelete] = useState<Appointment | null>(null);
   const [saving, setSaving] = useState(false);
@@ -75,6 +77,24 @@ export default function AppointmentsSection({ patientId, tutorId }: { patientId:
     if (!editor) return;
     const errors = validateSchema(appointmentSchema, editor.data);
     if (errors) { setFieldErrors(errors); toast('Revisa los campos marcados', 'error'); return; }
+
+    // S25: no agendar en fecha/hora ya pasada.
+    if (editor.mode === 'create' && isPastDateTime(editor.data.fecha, editor.data.hora)) {
+      toast('No se puede agendar en una fecha/hora pasada', 'error');
+      return;
+    }
+    // Edición: permitir cambiar estado de una cita vieja, pero no correrla al pasado.
+    if (editor.mode === 'edit') {
+      const original = appointments.find(a => a.id === editor.id);
+      const dateChanged = editor.data.fecha !== original?.fecha;
+      const horaOriginal = original?.hora ?? '';
+      const horaNueva = editor.data.hora ?? '';
+      if (original && (dateChanged || horaNueva !== horaOriginal) && isPastDateTime(editor.data.fecha, editor.data.hora)) {
+        toast('No se puede mover la cita a una fecha/hora pasada', 'error');
+        return;
+      }
+    }
+
     setSaving(true);
 
     if (editor.mode === 'create') {
@@ -108,7 +128,10 @@ export default function AppointmentsSection({ patientId, tutorId }: { patientId:
   return (
     <div className="bg-white dark:bg-surface-800 rounded-2xl border border-surface-200 dark:border-surface-700 shadow-sm overflow-hidden">
       <div className="flex items-center justify-between px-4 py-3 border-b border-surface-100 dark:border-surface-800">
-        <h3 className="text-sm font-black text-surface-700 dark:text-surface-200">📅 Citas</h3>
+        <button onClick={() => setOpen(o => !o)} className="flex items-center gap-2 text-left group" aria-expanded={open}>
+          <h3 className="text-sm font-black text-surface-700 dark:text-surface-200 group-hover:text-brand-600">📅 Citas</h3>
+          <span className={`text-xs text-surface-400 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}>▾</span>
+        </button>
         <button
           onClick={openCreate}
           className="px-3 py-1.5 rounded-lg bg-brand-500 hover:bg-brand-600 text-white text-xs font-bold transition-colors"
@@ -117,6 +140,7 @@ export default function AppointmentsSection({ patientId, tutorId }: { patientId:
         </button>
       </div>
 
+      {open && (
       <div className="p-4 space-y-2">
         {loading ? (
           <div className="space-y-2">{[1, 2].map(i => <div key={i} className="h-14 rounded-xl bg-surface-100 dark:bg-surface-800 animate-pulse" />)}</div>
@@ -141,6 +165,7 @@ export default function AppointmentsSection({ patientId, tutorId }: { patientId:
           </>
         )}
       </div>
+      )}
 
       {/* Editor */}
       {editor && (

@@ -5,7 +5,7 @@
 // ============================================================
 
 import { NextResponse } from 'next/server';
-import { parseExamWithGemini } from '@/lib/gemini';
+import { parseExamWithGemini, GeminiError } from '@/lib/gemini';
 import { isAuthorized } from '@/lib/api-auth';
 
 const MAX_SIZE = 10 * 1024 * 1024; // 10 MB
@@ -50,8 +50,20 @@ export async function POST(request: Request) {
 
     return NextResponse.json(parsed);
   } catch (e) {
+    if (e instanceof GeminiError) {
+      const statusByCode: Record<string, number> = {
+        no_key: 503,
+        auth: 502,
+        rate_limit: 429,
+        model_not_found: 404,
+        gemini: 502,
+      };
+      return NextResponse.json(
+        { error: e.message, code: e.code },
+        { status: statusByCode[e.code] ?? 502 }
+      );
+    }
     const msg = e instanceof Error ? e.message : 'Error desconocido';
-    const status = msg.includes('GEMINI_API_KEY') ? 503 : 502;
-    return NextResponse.json({ error: msg }, { status });
+    return NextResponse.json({ error: msg }, { status: 502 });
   }
 }

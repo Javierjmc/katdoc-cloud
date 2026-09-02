@@ -27,6 +27,7 @@ const EMPTY: VaccinationInput = {
   lote: '',
   dosis: '',
   observaciones: '',
+  categoria: 'vacuna',
 };
 
 function fromVaccination(v: Vaccination): VaccinationInput {
@@ -39,12 +40,14 @@ function fromVaccination(v: Vaccination): VaccinationInput {
     lote: v.lote ?? '',
     dosis: v.dosis ?? '',
     observaciones: v.observaciones ?? '',
+    categoria: v.categoria ?? 'vacuna',
   };
 }
 
 export default function VaccinationsSection({ patientId }: { patientId: string }) {
-  const { vaccinations, loading, refetch } = useVaccinations(patientId);
+  const { vaccinations, loading, refetch } = useVaccinations(patientId, 'vacuna');
   const { toast } = useToast();
+  const [open, setOpen] = useState(true);
   const [editor, setEditor] = useState<EditorState | null>(null);
   const [toDelete, setToDelete] = useState<Vaccination | null>(null);
   const [saving, setSaving] = useState(false);
@@ -86,7 +89,10 @@ export default function VaccinationsSection({ patientId }: { patientId: string }
   return (
     <div className="bg-white dark:bg-surface-800 rounded-2xl border border-surface-200 dark:border-surface-700 shadow-sm overflow-hidden">
       <div className="flex items-center justify-between px-4 py-3 border-b border-surface-100 dark:border-surface-800">
-        <h3 className="text-sm font-black text-surface-700 dark:text-surface-200">💉 Vacunas</h3>
+        <button onClick={() => setOpen(o => !o)} className="flex items-center gap-2 text-left group" aria-expanded={open}>
+          <h3 className="text-sm font-black text-surface-700 dark:text-surface-200 group-hover:text-brand-600">💉 Vacunas</h3>
+          <span className={`text-xs text-surface-400 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}>▾</span>
+        </button>
         <button
           onClick={openCreate}
           className="px-3 py-1.5 rounded-lg bg-brand-500 hover:bg-brand-600 text-white text-xs font-bold transition-colors"
@@ -95,6 +101,7 @@ export default function VaccinationsSection({ patientId }: { patientId: string }
         </button>
       </div>
 
+      {open && (
       <div className="p-4 space-y-2">
         {loading ? (
           <div className="space-y-2">{[1, 2].map(i => <div key={i} className="h-14 rounded-xl bg-surface-100 dark:bg-surface-800 animate-pulse" />)}</div>
@@ -113,8 +120,8 @@ export default function VaccinationsSection({ patientId }: { patientId: string }
                   Aplicada: {v.fecha_aplicacion ? formatearFecha(v.fecha_aplicacion) : '—'}
                   {v.fecha_proxima_dosis && <> · Próxima: {formatearFecha(v.fecha_proxima_dosis)}</>}
                 </p>
-                {(v.marca || v.lote) && (
-                  <p className="text-xs text-surface-400 dark:text-surface-500 mt-0.5">{v.marca}{v.marca && v.lote ? ' · ' : ''}{v.lote}</p>
+                {(v.marca) && (
+                  <p className="text-xs text-surface-400 dark:text-surface-500 mt-0.5">{v.marca}</p>
                 )}
               </div>
               <div className="flex gap-1 shrink-0">
@@ -125,6 +132,7 @@ export default function VaccinationsSection({ patientId }: { patientId: string }
           ))
         )}
       </div>
+      )}
 
       {/* Editor */}
       {editor && (
@@ -143,12 +151,9 @@ export default function VaccinationsSection({ patientId }: { patientId: string }
                 <Input type="date" value={editor.data.fecha_proxima_dosis ?? ''} onChange={e => setField('fecha_proxima_dosis', e.target.value)} />
               </Field>
             </div>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 gap-3">
               <Field label="Marca">
                 <Input value={editor.data.marca ?? ''} onChange={e => setField('marca', e.target.value)} placeholder="Ej: Vanguard" />
-              </Field>
-              <Field label="Lote">
-                <Input value={editor.data.lote ?? ''} onChange={e => setField('lote', e.target.value)} placeholder="Lote" />
               </Field>
               <Field label="Dosis">
                 <Input value={editor.data.dosis ?? ''} onChange={e => setField('dosis', e.target.value)} placeholder="Ej: 1ra / Refuerzo" />

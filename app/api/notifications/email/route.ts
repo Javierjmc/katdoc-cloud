@@ -17,7 +17,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
 
-    const body = (await request.json()) as { to: string; subject?: string; body?: string; html?: string; reminderId?: string };
+    const body = (await request.json()) as {
+      to: string;
+      subject?: string;
+      body?: string;
+      html?: string;
+      reminderId?: string;
+      attachment?: { filename: string; dataBase64: string };
+    };
     if (!body.to || !body.body) {
       return NextResponse.json({ error: 'Faltan destinatario o contenido' }, { status: 400 });
     }
@@ -32,6 +39,7 @@ export async function POST(request: Request) {
       subject: body.subject,
       body: body.body,
       html: body.html,
+      attachment: body.attachment,
     });
 
     if (!result.ok) {

@@ -1,6 +1,5 @@
 'use client';
 import { useState, useEffect, useMemo } from 'react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { supabase } from '@/lib/supabase';
@@ -9,7 +8,9 @@ import { ESPECIES } from '@/types';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { useLoadMore } from '@/hooks/useLoadMore';
-import { LoadMoreButton } from '@/components/ui';
+import { useAuthGuard } from '@/hooks/useAuthGuard';
+import { LoadMoreButton, ImageLightbox } from '@/components/ui';
+import { PageLoader } from '@/components/ui/Badge';
 import { calcularEdad } from '@/lib/utils';
 
 type PatientRow = {
@@ -22,7 +23,6 @@ type PatientRow = {
 type TabKey = 'activos' | 'inactivos';
 
 export default function PatientsPage() {
-  const router = useRouter();
   const [patients, setPatients] = useState<PatientRow[]>([]);
   const [loading, setLoading]  = useState(true);
   const [search, setSearch]    = useState('');
@@ -30,11 +30,8 @@ export default function PatientsPage() {
   const [tab, setTab]          = useLocalStorage<TabKey>('patients_tab', 'activos');
   const [filterEspecie, setFilterEspecie] = useLocalStorage('patients_especie', '');
   const debouncedSearch = useDebounce(search, 250);
-
-  useEffect(() => {
-    const auth = sessionStorage.getItem('vetcare_auth');
-    if (auth !== 'true') router.replace('/login');
-  }, [router]);
+  const { ready } = useAuthGuard();
+  const [lightbox, setLightbox] = useState<string | null>(null);
 
   useEffect(() => {
     supabase.from('patients').select('*, tutor:tutors(nombre, cedula, telefono)').order('nombre')
@@ -58,6 +55,8 @@ export default function PatientsPage() {
   const { visible, hasMore, loadMore } = useLoadMore(filtered, PAGE_SIZE);
 
   const emoji: Record<string, string> = { Canino:'🐶', Felino:'🐱', Exótico:'🦜', Bovino:'🐄', Equino:'🐴', Otro:'🐾' };
+
+  if (!ready) return <PageLoader />;
 
   return (
     <AppShell>
@@ -121,8 +120,15 @@ export default function PatientsPage() {
               <Link key={p.id} href={`/patients/${p.id}`}
                 className="bg-white dark:bg-surface-800 rounded-2xl border border-surface-200 dark:border-surface-700 hover:border-brand-400 hover:shadow-md hover:shadow-brand-500/10 transition-all group overflow-hidden"
               >
-                {/* Foto */}
-                <div className="h-36 bg-brand-50 flex items-center justify-center relative overflow-hidden">
+                {/* Foto (toca para ampliar, S26) */}
+                <div
+                  className="h-36 bg-brand-50 flex items-center justify-center relative overflow-hidden"
+                  role={p.photo_url ? 'button' : undefined}
+                  tabIndex={p.photo_url ? 0 : undefined}
+                  aria-label={p.photo_url ? `Ampliar foto de ${p.nombre}` : undefined}
+                  onClick={p.photo_url ? e => { e.preventDefault(); e.stopPropagation(); setLightbox(p.photo_url ?? null); } : undefined}
+                  onKeyDown={p.photo_url ? e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); setLightbox(p.photo_url ?? null); } } : undefined}
+                >
                   {p.photo_url
                     ? <Image src={p.photo_url} alt={p.nombre} fill className="object-cover group-hover:scale-105 transition-transform duration-300" />
                     : <span className="text-5xl">{emoji[p.especie] ?? '🐾'}</span>
@@ -150,7 +156,13 @@ export default function PatientsPage() {
               <Link key={p.id} href={`/patients/${p.id}`}
                 className="flex items-center gap-4 bg-white dark:bg-surface-800 rounded-2xl border border-surface-200 dark:border-surface-700 hover:border-brand-400 p-3 transition-all group"
               >
-                <div className="w-14 h-14 rounded-xl overflow-hidden bg-brand-50 shrink-0 flex items-center justify-center">
+                <div className="w-14 h-14 rounded-xl overflow-hidden bg-brand-50 shrink-0 flex items-center justify-center"
+                  role={p.photo_url ? 'button' : undefined}
+                  tabIndex={p.photo_url ? 0 : undefined}
+                  aria-label={p.photo_url ? `Ampliar foto de ${p.nombre}` : undefined}
+                  onClick={p.photo_url ? e => { e.preventDefault(); e.stopPropagation(); setLightbox(p.photo_url ?? null); } : undefined}
+                  onKeyDown={p.photo_url ? e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); setLightbox(p.photo_url ?? null); } } : undefined}
+                >
                   {p.photo_url ? <Image src={p.photo_url} alt={p.nombre} width={56} height={56} className="object-cover w-full h-full" /> : <span className="text-2xl">{emoji[p.especie] ?? '🐾'}</span>}
                 </div>
                 <div className="flex-1 min-w-0">
@@ -171,6 +183,8 @@ export default function PatientsPage() {
         )}
         {hasMore && !loading && <LoadMoreButton visible={visible.length} total={filtered.length} onClick={loadMore} />}
       </div>
+
+      <ImageLightbox src={lightbox} alt="Foto del paciente" onClose={() => setLightbox(null)} />
     </AppShell>
   );
 }

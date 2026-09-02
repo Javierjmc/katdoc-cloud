@@ -8,3 +8,4 @@ export { PageHeader }                       from './PageHeader';
 export { ConfirmDialog }                    from './ConfirmDialog';
 export { ToastProvider, useToast }          from './Toast';
 export { LoadMoreButton }                   from './LoadMoreButton';
+export { default as ImageLightbox }         from './ImageLightbox';

@@ -77,6 +77,18 @@ export function usePatient(patientId: string | undefined) {
   return { patient, loading, error, refetch: fetchPatient };
 }
 
+// ─── Función: buscar tutor por cédula (normalizada) ─────────
+export async function findTutorByCedula(cedula?: string): Promise<Tutor | null> {
+  if (!cedula) return null;
+  const normalized = cedula.trim().toUpperCase();
+  const { data } = await supabase
+    .from('tutors')
+    .select('*')
+    .eq('cedula', normalized)
+    .maybeSingle();
+  return (data as Tutor) ?? null;
+}
+
 // ─── Función: crear tutor + paciente (transacción lógica) ───
 export async function createPatientWithTutor(
   input: CreatePatientInput,

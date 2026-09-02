@@ -8,8 +8,11 @@ import type { Appointment, AppointmentState } from '@/types';
 
 // ─── Tipo de entrada para crear/editar ─────────────────────
 export type AppointmentInput = {
-  patient_id: string;
-  tutor_id?: string;
+  patient_id?: string | null;
+  tutor_id?: string | null;
+  nombre_paciente?: string;
+  tutor_nombre?: string;
+  telefono_tutor?: string;
   fecha: string;
   hora?: string;
   motivo?: string;

@@ -7,6 +7,7 @@ export { getProvider, WaLinkProvider } from './provider';
 export type { NotificationProvider, NotificationMessage, SendResult } from './provider';
 export { buildWhatsAppLink, buildMensajeRecordatorio, buildEmailRecordatorio } from './messages';
 export { scanReminders } from './scan';
+export { dispatchEmails } from './dispatch';
 export { logNotification } from './log';
 
 // ── Nota de upgrade (S16) ──────────────────────────────────────

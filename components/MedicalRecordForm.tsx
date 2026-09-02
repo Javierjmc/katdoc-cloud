@@ -5,6 +5,7 @@ import { useState, useCallback } from 'react';
 import Link from 'next/link';
 import { supabase, uploadMedicalDocument } from '@/lib/supabase';
 import { useToast } from '@/components/ui/Toast';
+import { hoyLocal, fechaInputToISO, isoToFechaInput } from '@/lib/utils';
 import {
   SISTEMAS_CONFIG,
   ACTITUD_OPTIONS,
@@ -45,7 +46,9 @@ export default function MedicalRecordForm({
     const initial: Partial<MedicalRecord> = {
       patient_id:      patientId,
       numero_historia: existingRecord?.numero_historia ?? '',
-      fecha_consulta:  existingRecord?.fecha_consulta  ?? new Date().toISOString().split('T')[0],
+      fecha_consulta:  existingRecord?.fecha_consulta
+        ? isoToFechaInput(existingRecord.fecha_consulta as string)
+        : hoyLocal(),
       sistemas_status: existingRecord?.sistemas_status ?? INITIAL_SISTEMAS,
       pulso:               existingRecord?.pulso               ?? PULSO_DEFAULT,
       ganglios_linfaticos: existingRecord?.ganglios_linfaticos ?? GANGLIOS_DEFAULT,
@@ -56,6 +59,15 @@ export default function MedicalRecordForm({
     // Legacy: 'Castrado/a' ya no es una opción válida → se normaliza.
     if (initial.historial_reproductivo === 'Castrado/a') {
       initial.historial_reproductivo = 'Esterilizado/a';
+    }
+
+    // S33: la fecha se maneja en la UI como YYYY-MM-DD local; el valor crudo
+    // que trae existingRecord (TIMESTAMPTZ) se convierte a componentes locales.
+    if (existingRecord?.fecha_consulta) {
+      initial.fecha_consulta = isoToFechaInput(existingRecord.fecha_consulta as string);
+    } else if (existingRecord?.id) {
+      // Registro legacy sin fecha: dejar vacío (no inventar "hoy" al editar).
+      initial.fecha_consulta = '';
     }
 
     return initial;
@@ -106,7 +118,7 @@ export default function MedicalRecordForm({
         'tratamientos_actuales','evolucion','alimentacion',
         'historial_reproductivo','ultimo_celo','fecha_ultimo_parto',
         'motivo_consulta','f_respiratoria','f_cardiaca','temperatura',
-        'pulso','tiempo_llenado_capilar','ganglios_linfaticos',
+        'peso','pulso','tiempo_llenado_capilar','ganglios_linfaticos',
         'mucosas','actitud_temperamento','descripcion_hallazgos',
         'sistemas_status',
       ];
@@ -138,6 +150,12 @@ export default function MedicalRecordForm({
       if (!esHembra) {
         delete payload.ultimo_celo;
         delete payload.fecha_ultimo_parto;
+      }
+
+      // S33: guardar la fecha a mediodía local (evita que en Venezuela se vea
+      // el día anterior por el corrimiento UTC de las 00:00).
+      if (payload.fecha_consulta) {
+        payload.fecha_consulta = fechaInputToISO(payload.fecha_consulta as string);
       }
 
       let savedData: MedicalRecord;
@@ -178,6 +196,9 @@ export default function MedicalRecordForm({
             .update({ document_url: url })
             .eq('id', savedData.id);
           savedData.document_url = url;
+          toast('Documento adjuntado', 'success');
+        } else {
+          toast('La historia se guardó, pero el PDF no se pudo subir.', 'error');
         }
       }
 
@@ -204,7 +225,7 @@ export default function MedicalRecordForm({
   const SECTIONS_FIELDS: { label: string; keys: (keyof MedicalRecord)[] }[] = [
     { label: 'Identificación',   keys: ['numero_historia', 'fecha_consulta', 'motivo_consulta'] },
     { label: 'Anamnésicos',      keys: ['ultima_desparasitacion', 'vacunas', 'enfermedades_anteriores', 'tratamientos_actuales', 'evolucion', 'alimentacion', 'historial_reproductivo', 'ultimo_celo', 'fecha_ultimo_parto'] },
-    { label: 'Examen clínico',   keys: ['f_respiratoria', 'f_cardiaca', 'temperatura', 'pulso', 'tiempo_llenado_capilar', 'ganglios_linfaticos', 'mucosas', 'actitud_temperamento'] },
+    { label: 'Examen clínico',   keys: ['peso', 'f_respiratoria', 'f_cardiaca', 'temperatura', 'pulso', 'tiempo_llenado_capilar', 'ganglios_linfaticos', 'mucosas', 'actitud_temperamento'] },
     { label: 'Órganos y sistemas', keys: ['sistemas_status', 'descripcion_hallazgos'] },
   ];
   const completedSections = SECTIONS_FIELDS.filter(s =>
@@ -262,8 +283,8 @@ export default function MedicalRecordForm({
           <Field label="Última Desparasitación (Fecha y Producto)">
             <Input value={form.ultima_desparasitacion ?? ''} onChange={v => set('ultima_desparasitacion', v)} placeholder="Ej: 15/01/2025 — Ivermectina 1%" />
           </Field>
-          <Field label="Vacunas (Fecha, Marca, Lote)">
-            <Input value={form.vacunas ?? ''} onChange={v => set('vacunas', v)} placeholder="Ej: 20/03/2025 — Nobivac — Lote A1234" />
+          <Field label="Vacunas (Fecha, Marca)">
+            <Input value={form.vacunas ?? ''} onChange={v => set('vacunas', v)} placeholder="Ej: 20/03/2025 — Nobivac" />
             <Link href={`/patients/${patientId}`} className="mt-1 inline-block text-[11px] font-semibold text-brand-600 dark:text-brand-400 hover:underline">
               💉 Gestionar vacunas estructuradas →
             </Link>
@@ -309,6 +330,12 @@ export default function MedicalRecordForm({
 
       <Section title="❤️ Examen Clínico / Constantes Vitales">
         <div className="grid grid-cols-2 gap-3">
+          <Field label="Peso (kg)">
+            <Input type="number" step="0.1" inputMode="decimal"
+              value={form.peso?.toString() ?? ''}
+              onChange={v => set('peso', v === '' ? undefined : parseFloat(v))}
+              placeholder="Ej: 8.5" />
+          </Field>
           <Field label="Frec. Respiratoria (frpm)">
             <Input value={form.f_respiratoria ?? ''} onChange={v => set('f_respiratoria', v)} placeholder="Ej: 24" inputMode="numeric" />
           </Field>
@@ -403,7 +430,7 @@ export default function MedicalRecordForm({
       </Section>
 
       {/* Footer fijo */}
-      <div className="fixed bottom-0 left-0 right-0 z-40 bg-white dark:bg-surface-900 border-t border-surface-200 dark:border-surface-800 px-4 py-3">
+      <div className="fixed bottom-0 left-0 right-0 z-40 bg-white dark:bg-surface-900 border-t border-surface-200 dark:border-surface-800 px-4 py-3 md:left-16 lg:left-64">
         {error && <p className="text-xs text-red-500 mb-2">{error}</p>}
         {saved && <p className="text-xs text-brand-600 dark:text-brand-400 mb-2">✓ Historia guardada correctamente</p>}
         <button

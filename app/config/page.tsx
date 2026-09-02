@@ -124,6 +124,20 @@ export default function ConfigPage() {
                   <span className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-all ${c.enabled ? 'left-[22px]' : 'left-0.5'}`} />
                 </button>
 
+                {/* Email automático (S39) */}
+                <div className="flex flex-col items-center gap-0.5">
+                  <button
+                    onClick={() => patch(c.id, { email_auto: !(c.email_auto ?? false) })}
+                    disabled={savingId === c.id}
+                    aria-label={c.email_auto ? 'Desactivar email automático' : 'Activar email automático'}
+                    title="Enviar automáticamente por email (Resend)"
+                    className={`w-11 h-6 rounded-full relative transition-colors ${c.email_auto ? 'bg-green-500' : 'bg-surface-300 dark:bg-surface-600'}`}
+                  >
+                    <span className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-all ${c.email_auto ? 'left-[22px]' : 'left-0.5'}`} />
+                  </button>
+                  <span className="text-[9px] text-surface-400 dark:text-surface-500 leading-none">✉️ auto</span>
+                </div>
+
                 <button
                   onClick={() => setToDelete(c)}
                   className="w-8 h-8 rounded-lg bg-red-50 hover:bg-red-100 text-red-500 text-xs"

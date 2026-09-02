@@ -5,20 +5,70 @@
 
 /**
  * Calcula la edad legible a partir de una fecha de nacimiento.
- * Devuelve formato "X año(s)" o "X mes(es)" o "Recién nacido".
+ * Incluye días: "4 meses y 12 días", "25 días", "2 años y 3 meses".
+ * Fechas en hora local (mediodía) para no desfasar por zona horaria.
  */
 export function calcularEdad(fechaNacimiento: string | null | undefined): string {
   if (!fechaNacimiento) return 'Edad desconocida';
-  const born   = new Date(fechaNacimiento);
-  const now    = new Date();
-  const years  = now.getFullYear() - born.getFullYear();
-  const months = now.getMonth() - born.getMonth() + years * 12;
-  if (months < 1) return 'Recién nacido';
-  if (months < 12) return `${months} mes${months !== 1 ? 'es' : ''}`;
-  const y = Math.floor(months / 12);
-  const m = months % 12;
-  if (m === 0) return `${y} año${y !== 1 ? 's' : ''}`;
-  return `${y} año${y !== 1 ? 's' : ''} y ${m} mes${m !== 1 ? 'es' : ''}`;
+
+  const nac = new Date(`${fechaNacimiento}T12:00:00`);
+  if (Number.isNaN(nac.getTime())) return 'Edad desconocida';
+
+  const hoy = new Date();
+  hoy.setHours(12, 0, 0, 0);
+
+  if (nac.getTime() > hoy.getTime()) return '—'; // fecha futura
+
+  const totalDias = Math.floor((hoy.getTime() - nac.getTime()) / 86400000);
+
+  if (totalDias < 30) {
+    return totalDias === 0 ? 'Recién nacido' : `${totalDias} día${totalDias !== 1 ? 's' : ''}`;
+  }
+
+  const { years, months, days } = diffYMD(nac, hoy);
+  const parts: string[] = [];
+  if (years > 0) parts.push(`${years} año${years !== 1 ? 's' : ''}`);
+  if (months > 0) parts.push(`${months} mes${months !== 1 ? 'es' : ''}`);
+  if (days > 0) parts.push(`${days} día${days !== 1 ? 's' : ''}`);
+
+  if (parts.length === 0) return 'Recién nacido';
+  if (parts.length === 1) return parts[0];
+  return `${parts.slice(0, -1).join(', ')} y ${parts[parts.length - 1]}`;
+}
+
+/** Diferencia en años/meses/días entre dos fechas (b >= a), respetando fin de mes. */
+function diffYMD(a: Date, b: Date): { years: number; months: number; days: number } {
+  let years = b.getFullYear() - a.getFullYear();
+  let cursor = new Date(a);
+  cursor.setFullYear(a.getFullYear() + years);
+  if (cursor.getTime() > b.getTime() && years > 0) {
+    years -= 1;
+    cursor = new Date(a);
+    cursor.setFullYear(a.getFullYear() + years);
+  }
+
+  let months = 0;
+  while (true) {
+    const next = addMonthsClamped(cursor, 1);
+    if (next.getTime() > b.getTime()) break;
+    cursor = next;
+    months += 1;
+  }
+
+  const days = Math.max(0, Math.floor((b.getTime() - cursor.getTime()) / 86400000));
+  return { years, months, days };
+}
+
+/** Suma meses a una fecha recortando el día al último día del mes destino. */
+function addMonthsClamped(date: Date, delta: number): Date {
+  const res = new Date(date);
+  const day = res.getDate();
+  res.setDate(1);
+  res.setMonth(res.getMonth() + delta);
+  const lastDay = new Date(res.getFullYear(), res.getMonth() + 1, 0).getDate();
+  res.setDate(Math.min(day, lastDay));
+  res.setHours(12, 0, 0, 0);
+  return res;
 }
 
 /**
@@ -59,6 +109,58 @@ export function normalizePhoneForWhatsApp(telefono?: string | null): string | nu
   if (digits.length === 12 && digits.startsWith('0058')) return digits.slice(2);
   if (digits.length >= 11 && digits.startsWith('58')) return digits;
   return null;
+}
+
+// ─── Helpers de fecha local (S33) ────────────────────────────
+// Evitan el bug de "un día antes": una fecha guardada a medianoche UTC se ve
+// el día anterior en Venezuela. Guardamos a mediodía local y mostramos
+// siempre componentes locales.
+
+/** Fecha de HOY en hora local, formato YYYY-MM-DD. */
+export function hoyLocal(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+/**
+ * Convierte "YYYY-MM-DD" (de un input date) a ISO completo a mediodía local,
+ * para persistir en columnas TIMESTAMPTZ sin corrimiento de día.
+ */
+export function fechaInputToISO(f: string | null | undefined): string {
+  if (!f || !/^\d{4}-\d{2}-\d{2}$/.test(f)) return f ?? '';
+  const d = new Date(`${f}T12:00:00`);
+  return Number.isNaN(d.getTime()) ? f : d.toISOString();
+}
+
+/**
+ * Convierte un valor ISO (TIMESTAMPTZ) a "YYYY-MM-DD" local para precargar
+ * un input date. Si ya viene "YYYY-MM-DD" lo devuelve tal cual.
+ */
+export function isoToFechaInput(iso: string | null | undefined): string {
+  if (!iso) return '';
+  if (/^\d{4}-\d{2}-\d{2}$/.test(iso)) return iso;
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '';
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+/**
+ * Indica si una fecha (y hora opcional) de una cita ya quedó en el pasado.
+ * - Fecha anterior a hoy → pasado.
+ * - Hoy sin hora → no pasado (se considera "programada para hoy").
+ * - Hoy con hora → pasado si esa hora ya pasó (hora local del dispositivo).
+ */
+export function isPastDateTime(fecha?: string | null, hora?: string | null): boolean {
+  if (!fecha) return false;
+  const hoy = hoyLocal();
+  if (fecha < hoy) return true;
+  if (fecha === hoy && hora && /^\d{2}:\d{2}$/.test(hora)) {
+    const [hh, mm] = hora.split(':').map(Number);
+    const now = new Date();
+    const candidate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hh, mm, 0, 0);
+    return candidate.getTime() < now.getTime();
+  }
+  return false;
 }
 
 /**

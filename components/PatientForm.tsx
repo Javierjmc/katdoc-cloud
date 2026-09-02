@@ -1,18 +1,19 @@
 'use client';
-// components/PatientForm.tsx — v2
-// Correcciones:
-// 1. Feedback visual al cargar foto (preview inmediato + estado de subida)
-// 2. Pre-rellena tutor_id cuando se viene desde la página de tutores
-// 3. Permite editar datos del tutor existente
+// components/PatientForm.tsx — v3
+// - Autocompletar tutores existentes (S22): datalist por nombre/cédula.
+// - Teléfono con prefijo +58 por defecto para WhatsApp (S22).
+// - Duplicidad de tutores (S23): aviso + opción de vincular o corregir cédula.
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase, uploadPetPhoto } from '@/lib/supabase';
-import { createPatientWithTutor, updatePatient } from '@/hooks/usePatients';
+import { createPatientWithTutor, updatePatient, findTutorByCedula } from '@/hooks/usePatients';
 import { ESPECIES } from '@/types';
 import { patientFormSchema, validateSchema, type FieldErrors } from '@/lib/schemas';
 import { Button } from '@/components/ui/Button';
 import { Field, Input, Select } from '@/components/ui/Input';
 import { ErrorMessage, SuccessMessage } from '@/components/ui/Badge';
+import { useToast } from '@/components/ui/Toast';
+import { ALLOWED_IMAGE_TYPES, MAX_PHOTO_SIZE } from '@/lib/constants';
 import type { Patient, Tutor } from '@/types';
 import Image from 'next/image';
 
@@ -23,13 +24,21 @@ interface PatientFormProps {
   onSuccess?: (patientId: string) => void;
 }
 
+function tutorLabel(t: { nombre: string; cedula: string }): string {
+  return `${t.nombre} · ${t.cedula}`;
+}
+
 export default function PatientForm({ existingPatient, prefillTutor, onSuccess }: PatientFormProps) {
   const isEditing = !!existingPatient;
+  const { toast } = useToast();
 
+  // Teléfono: por defecto con prefijo +58 en creación (para WhatsApp).
+  const telefonoInicial =
+    existingPatient?.tutor?.telefono ?? prefillTutor?.telefono ?? '';
   const [tutor, setTutor] = useState({
     nombre:    existingPatient?.tutor?.nombre    ?? prefillTutor?.nombre    ?? '',
     cedula:    existingPatient?.tutor?.cedula    ?? prefillTutor?.cedula    ?? '',
-    telefono:  existingPatient?.tutor?.telefono  ?? prefillTutor?.telefono  ?? '',
+    telefono:  telefonoInicial || (isEditing ? '' : '+58 '),
     email:     existingPatient?.tutor?.email     ?? prefillTutor?.email     ?? '',
     direccion: existingPatient?.tutor?.direccion ?? prefillTutor?.direccion ?? '',
   });
@@ -53,13 +62,74 @@ export default function PatientForm({ existingPatient, prefillTutor, onSuccess }
   const [success, setSuccess] = useState('');
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
 
-  const setT = (key: keyof typeof tutor, val: string) => { setTutor(prev => ({ ...prev, [key]: val })); setFieldErrors({}); };
+  // S22: sugerencias de tutores existentes.
+  const [tutors, setTutors] = useState<Tutor[]>([]);
+  // S23: cuando la cédula ya pertenece a otro tutor.
+  const [duplicateTutor, setDuplicateTutor] = useState<Tutor | null>(null);
+  // Tutor elegido del autocompletar / duplicado vinculado.
+  const [linkedTutorId, setLinkedTutorId] = useState<string | null>(
+    prefillTutor?.id ?? null
+  );
+  const cedulaRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    supabase
+      .from('tutors')
+      .select('id, nombre, cedula, telefono, email, direccion')
+      .order('nombre')
+      .limit(100)
+      .then(({ data }) => { if (data) setTutors(data as Tutor[]); });
+  }, []);
+
+  const setT = (key: keyof typeof tutor, val: string) => {
+    setTutor(prev => ({ ...prev, [key]: val }));
+    setFieldErrors({});
+    // Si cambia cédula/nombre a mano, el vínculo/duplicado anterior se invalida.
+    if (key === 'cedula' || key === 'nombre') {
+      setLinkedTutorId(prev => (prev && key === 'nombre' ? prev : null));
+      setDuplicateTutor(null);
+    }
+    setError('');
+  };
   const setP = (key: keyof typeof patient, val: string) => { setPatient(prev => ({ ...prev, [key]: val })); setFieldErrors({}); };
 
-  // ── Foto: preview inmediato + subida inmediata si es edición ──
+  /** Vincula los datos de un tutor existente (autocompletar o "Usar este tutor"). */
+  const applyTutorLink = (t: Tutor) => {
+    setTutor({
+      nombre:    t.nombre ?? '',
+      cedula:    t.cedula ?? '',
+      telefono:  t.telefono ?? '+58 ',
+      email:     t.email ?? '',
+      direccion: t.direccion ?? '',
+    });
+    setLinkedTutorId(t.id);
+    setDuplicateTutor(null);
+    setFieldErrors({});
+    setError('');
+  };
+
+  /** Si el usuario escribe el label de una sugerencia del datalist, la vincula. */
+  const handleTutorNombreChange = (val: string) => {
+    setT('nombre', val);
+    const match = tutors.find(t => tutorLabel(t) === val.trim());
+    if (match) applyTutorLink(match);
+  };
+
+  // ── Foto: validación + preview inmediato + subida inmediata si es edición ──
   const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+      toast('Solo imágenes (JPG/PNG/WebP)', 'error');
+      e.target.value = '';
+      return;
+    }
+    if (file.size > MAX_PHOTO_SIZE) {
+      toast('La foto supera los 5 MB', 'error');
+      e.target.value = '';
+      return;
+    }
 
     // Preview inmediato
     const localUrl = URL.createObjectURL(file);
@@ -71,13 +141,16 @@ export default function PatientForm({ existingPatient, prefillTutor, onSuccess }
     if (isEditing && existingPatient?.id) {
       setPhotoUploading(true);
       const url = await uploadPetPhoto(file, existingPatient.id);
+      setPhotoUploading(false);
       if (url) {
         await updatePatient(existingPatient.id, { photo_url: url });
         setPhotoPreview(url);
         setP('photo_url', url);
         setPhotoUploaded(true);
+        toast('Foto actualizada correctamente', 'success');
+      } else {
+        toast('No se pudo subir la foto. Intentá de nuevo.', 'error');
       }
-      setPhotoUploading(false);
     }
   };
 
@@ -104,7 +177,6 @@ export default function PatientForm({ existingPatient, prefillTutor, onSuccess }
       if (isEditing) {
         // Actualizar datos del paciente
         let photoUrl = patient.photo_url;
-        // Si hay foto nueva y no se subió en el onChange (modo creación)
         if (photoFile && !photoUploaded && patientId) {
           photoUrl = (await uploadPetPhoto(photoFile, patientId)) ?? photoUrl;
         }
@@ -116,10 +188,20 @@ export default function PatientForm({ existingPatient, prefillTutor, onSuccess }
           await supabase.from('tutors').update(tutor).eq('id', existingPatient.tutor.id);
         }
       } else {
-        // Crear tutor + paciente
+        // Crear: detección de duplicados de tutor por cédula (S23).
+        if (!prefillTutor?.id && !linkedTutorId) {
+          const dup = await findTutorByCedula(tutor.cedula);
+          if (dup) {
+            setDuplicateTutor(dup);
+            setError(`Ya existe un tutor con la cédula ${tutor.cedula}. Revisá el aviso.`);
+            setSaving(false);
+            return;
+          }
+        }
+
         const { patientId: newId, error: createErr } = await createPatientWithTutor(
           { tutor, patient },
-          { tutorId: prefillTutor?.id }
+          { tutorId: linkedTutorId ?? prefillTutor?.id }
         );
         if (createErr || !newId) throw new Error(createErr ?? 'Error desconocido');
         patientId = newId;
@@ -127,7 +209,12 @@ export default function PatientForm({ existingPatient, prefillTutor, onSuccess }
         // Subir foto si hay una
         if (photoFile) {
           const url = await uploadPetPhoto(photoFile, patientId);
-          if (url) await updatePatient(patientId, { photo_url: url });
+          if (url) {
+            await updatePatient(patientId, { photo_url: url });
+            toast('Foto subida correctamente', 'success');
+          } else {
+            toast('Paciente guardado, pero la foto no se pudo subir.', 'error');
+          }
         }
       }
 
@@ -140,7 +227,8 @@ export default function PatientForm({ existingPatient, prefillTutor, onSuccess }
     }
   };
 
-  const tutorLocked = !!prefillTutor && !isEditing;
+  const tutorLocked = !!prefillTutor && !isEditing && !!prefillTutor.id;
+  const linkedToExisting = isEditing ? false : !!linkedTutorId && !prefillTutor?.id;
 
   return (
     <div className="space-y-4 pb-28 px-4 pt-4">
@@ -164,10 +252,19 @@ export default function PatientForm({ existingPatient, prefillTutor, onSuccess }
           )}
         </div>
 
-        <label htmlFor="photo-input" className="cursor-pointer text-sm font-bold text-brand-500 hover:text-brand-600">
-          {photoUploading ? 'Subiendo...' : photoUploaded ? '✓ Foto actualizada' : photoPreview ? 'Cambiar foto' : 'Agregar foto'}
-        </label>
-        <input id="photo-input" type="file" accept="image/*" capture="environment"
+        {/* S27: dos opciones — cámara en vivo o galería */}
+        <div className="flex items-center gap-3">
+          <label htmlFor="photo-camera" className="cursor-pointer text-sm font-bold text-brand-500 hover:text-brand-600">
+            📷 Tomar foto
+          </label>
+          <span className="text-surface-300">·</span>
+          <label htmlFor="photo-gallery" className="cursor-pointer text-sm font-bold text-brand-500 hover:text-brand-600">
+            🖼️ Galería
+          </label>
+        </div>
+        <input id="photo-camera" type="file" accept="image/*" capture="environment"
+          onChange={handlePhotoChange} className="hidden" />
+        <input id="photo-gallery" type="file" accept="image/jpeg,image/png,image/webp"
           onChange={handlePhotoChange} className="hidden" />
 
         {photoFile && !isEditing && (
@@ -181,24 +278,58 @@ export default function PatientForm({ existingPatient, prefillTutor, onSuccess }
       {/* ── Datos del Tutor ── */}
       <SectionHeader title="👤 Datos del Propietario" />
 
-      {tutorLocked && (
+      {(tutorLocked || linkedToExisting) && (
         <div className="text-xs bg-brand-50 border border-brand-200 text-brand-700 rounded-xl px-3 py-2">
-          ℹ️ Los datos del tutor se pre-rellenaron. Puedes editarlos si es necesario.
+          ℹ️ Se registrará la mascota bajo el propietario <strong>{tutor.nombre}</strong> ({tutor.cedula}).
+          {linkedToExisting && (
+            <button type="button" onClick={() => { setLinkedTutorId(null); setDuplicateTutor(null); cedulaRef.current?.focus(); }}
+              className="ml-1 font-bold text-brand-600 hover:underline">
+              (¿Otro propietario?)
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Aviso de duplicado (S23) */}
+      {duplicateTutor && !isEditing && (
+        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 space-y-3">
+          <p className="text-sm font-bold text-amber-800">⚠️ Ese propietario ya existe</p>
+          <div className="text-xs text-amber-700 space-y-1">
+            <p><strong>{duplicateTutor.nombre}</strong> · {duplicateTutor.cedula}</p>
+            {duplicateTutor.telefono && <p>📞 {duplicateTutor.telefono}</p>}
+            {duplicateTutor.email && <p>📧 {duplicateTutor.email}</p>}
+          </div>
+          <p className="text-xs text-amber-600">
+            Podés agregar la mascota a su ficha o corregir la cédula si no es el mismo.
+          </p>
+          <div className="flex gap-2">
+            <Button size="sm" onClick={() => applyTutorLink(duplicateTutor)}>Usar este propietario</Button>
+            <Button size="sm" variant="secondary" onClick={() => { setDuplicateTutor(null); setError(''); cedulaRef.current?.focus(); }}>
+              Usar otra cédula
+            </Button>
+          </div>
         </div>
       )}
 
       <div className="grid grid-cols-1 gap-3">
         <Field label="Nombre completo" required error={fieldErrors['tutor.nombre']}>
-          <Input value={tutor.nombre} onChange={e => setT('nombre', e.target.value)} placeholder="Ej: María González" />
+          <Input value={tutor.nombre} onChange={e => handleTutorNombreChange(e.target.value)}
+            placeholder="Ej: María González" list="tutores-sugeridos" disabled={tutorLocked} />
+          <datalist id="tutores-sugeridos">
+            {tutors.map(t => (
+              <option key={t.id} value={tutorLabel(t)} />
+            ))}
+          </datalist>
         </Field>
         <div className="grid grid-cols-2 gap-3">
           <Field label="Cédula / DNI" required error={fieldErrors['tutor.cedula']}>
-            <Input value={tutor.cedula} onChange={e => setT('cedula', e.target.value)}
+            <Input ref={cedulaRef} value={tutor.cedula} onChange={e => setT('cedula', e.target.value)}
               placeholder="V-12345678" inputMode="numeric"
-              disabled={tutorLocked} />
+              disabled={tutorLocked || linkedToExisting} />
           </Field>
-          <Field label="Teléfono" error={fieldErrors['tutor.telefono']}>
-            <Input value={tutor.telefono} onChange={e => setT('telefono', e.target.value)} placeholder="0412-000-0000" type="tel" />
+          <Field label="Teléfono" error={fieldErrors['tutor.telefono']} hint="Prefijo +58 por defecto (WhatsApp)">
+            <Input value={tutor.telefono} onChange={e => setT('telefono', e.target.value)}
+              placeholder="+58 412-0000000" type="tel" inputMode="tel" maxLength={20} />
           </Field>
         </div>
         <Field label="Email" error={fieldErrors['tutor.email']}>

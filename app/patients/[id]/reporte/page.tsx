@@ -24,8 +24,8 @@ const SECTION_LABELS: Record<SectionKey, string> = {
   historial:  'Historial de consultas',
   vacunas:    'Vacunas',
   examenes:   'Exámenes de laboratorio',
-  recetas:    'Recetas',
-  ecografias: 'Ecografías',
+  recetas:    'Recipes',
+  ecografias: 'Ecografías / Rayos X',
 };
 
 const ALL_SECTIONS: SectionKey[] = ['datos', 'historial', 'vacunas', 'examenes', 'recetas', 'ecografias'];
@@ -167,7 +167,7 @@ export default function ReportePage() {
                         <th className="py-1 pr-2 font-semibold">Vacuna</th>
                         <th className="py-1 pr-2 font-semibold">Aplicada</th>
                         <th className="py-1 pr-2 font-semibold">Próxima</th>
-                        <th className="py-1 font-semibold">Marca / Lote</th>
+                        <th className="py-1 font-semibold">Marca</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -176,7 +176,7 @@ export default function ReportePage() {
                           <td className="py-1 pr-2">{v.vacuna}</td>
                           <td className="py-1 pr-2">{v.fecha_aplicacion ? formatearFecha(v.fecha_aplicacion) : '—'}</td>
                           <td className="py-1 pr-2">{v.fecha_proxima_dosis ? formatearFecha(v.fecha_proxima_dosis) : '—'}</td>
-                          <td className="py-1">{v.marca ?? ''}{v.marca && v.lote ? ' / ' : ''}{v.lote ?? ''}</td>
+                          <td className="py-1">{v.marca ?? ''}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -227,14 +227,14 @@ export default function ReportePage() {
 
             {sections.recetas && (
               <section className="mb-5">
-                <h2 className="text-sm font-black uppercase tracking-wide border-b border-surface-200 dark:border-surface-700 pb-1 mb-2">Recetas</h2>
+                <h2 className="text-sm font-black uppercase tracking-wide border-b border-surface-200 dark:border-surface-700 pb-1 mb-2">Recipes</h2>
                 {prescriptions.length === 0 ? (
-                  <p className="text-sm text-surface-400 dark:text-surface-500">Sin recetas registradas.</p>
+                  <p className="text-sm text-surface-400 dark:text-surface-500">Sin recipes registradas.</p>
                 ) : (
                   <div className="space-y-3">
                     {prescriptions.map(p => (
                       <div key={p.id} className="text-sm">
-                        <p className="font-semibold">{p.titulo ?? 'Receta'} · {p.fecha ? formatearFecha(p.fecha) : ''}</p>
+                        <p className="font-semibold">{p.titulo ?? 'Recipe'} · {p.fecha ? formatearFecha(p.fecha) : ''}</p>
                         <ol className="list-decimal list-inside">
                           {p.medicamentos.map((m, i) => (
                             <li key={i} className="text-surface-600 dark:text-surface-300">
@@ -256,7 +256,7 @@ export default function ReportePage() {
 
             {sections.ecografias && (
               <section className="mb-5">
-                <h2 className="text-sm font-black uppercase tracking-wide border-b border-surface-200 dark:border-surface-700 pb-1 mb-2">Ecografías</h2>
+                <h2 className="text-sm font-black uppercase tracking-wide border-b border-surface-200 dark:border-surface-700 pb-1 mb-2">Ecografías / Rayos X</h2>
                 {ecografias.length === 0 ? (
                   <p className="text-sm text-surface-400 dark:text-surface-500">Sin ecografías registradas.</p>
                 ) : (
