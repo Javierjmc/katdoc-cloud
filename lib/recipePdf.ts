@@ -4,6 +4,7 @@
 // Hoja A4 HORIZONTAL con dos formularios (izquierda "Rp.", derecha "Ind."):
 // logo + FECHA, caja de datos del paciente, watermark del logo, contenido y
 // pie con QR. Títulos y líneas en naranja de marca (#E8724A).
+// El contenido de cada bloque se auto-ajusta para que entren todos los ítems.
 // ============================================================
 
 import {
@@ -109,7 +110,7 @@ function drawForm(
       y: (top + bottom) / 2 - wmH / 2,
       width: wmW,
       height: wmH,
-      opacity: 0.07,
+      opacity: 0.15,
     });
   }
 
@@ -141,26 +142,49 @@ function drawForm(
   page.drawText(title, { x: innerX, y: y - 18, size: 22, font: f.bold, color: ACCENT });
   y -= 36;
 
-  // ── Contenido ──
+  // ── Contenido (auto-ajustado al alto disponible) ──
   const firmaH = f.firma ? (f.firma.height / f.firma.width) * FIRMA_W : 0;
   const footerTop = bottom + pad + 52 + (firmaH ? firmaH + 8 : 0);
+  const avail = y - footerTop;
+
+  type Row = { text: string; bold: boolean; indent: number; gapAfter: number };
+  const rows: Row[] = [];
   for (const item of items) {
-    if (y < footerTop + 14) break;
     if (item.title) {
-      for (const line of wrap(item.title, f.bold, 10, innerW)) {
-        if (y < footerTop + 14) break;
-        page.drawText(line, { x: innerX, y, size: 10, font: f.bold, color: DARK });
-        y -= 13;
+      for (const l of wrap(item.title, f.bold, 10, innerW)) {
+        rows.push({ text: l, bold: true, indent: 0, gapAfter: 0 });
       }
     }
     for (const raw of item.lines) {
-      for (const line of wrap(raw, f.regular, 9, innerW)) {
-        if (y < footerTop + 14) break;
-        page.drawText(line, { x: innerX + (item.title ? 8 : 0), y, size: 9, font: f.regular, color: GRAY });
-        y -= 12;
+      for (const l of wrap(raw, f.regular, 9, innerW - 8)) {
+        rows.push({ text: l, bold: false, indent: 8, gapAfter: 0 });
       }
     }
-    y -= 5;
+    if (rows.length) {
+      const last = rows[rows.length - 1];
+      rows[rows.length - 1] = { ...last, gapAfter: last.gapAfter + 6 };
+    }
+  }
+
+  const baseLh = 12.5;
+  const totalGaps = rows.reduce((a, r) => a + r.gapAfter, 0);
+  const totalBase = rows.length * baseLh + totalGaps;
+  const scale = totalBase > 0 && avail > 0 ? Math.min(1, avail / totalBase) : 1;
+  const lh = Math.max(8, baseLh * scale);
+  const gapScale = Math.max(0.35, scale);
+  const fontTitle = Math.max(7, 10 * scale);
+  const fontBody = Math.max(6.5, 9 * scale);
+
+  for (const r of rows) {
+    page.drawText(r.text, {
+      x: innerX + r.indent,
+      y,
+      size: r.bold ? fontTitle : fontBody,
+      font: r.bold ? f.bold : f.regular,
+      color: r.bold ? DARK : GRAY,
+    });
+    y -= lh;
+    if (r.gapAfter) y -= r.gapAfter * gapScale;
   }
 
   // ── Firma y sello del médico veterinario ──
@@ -170,12 +194,14 @@ function drawForm(
     page.drawImage(f.firma, { x: fx, y: fy, width: FIRMA_W, height: firmaH });
   }
 
-  // ── Pie: QR + contacto ──
+  // ── Pie: QR centrado + contacto ──
   const footerY = bottom + pad;
   if (f.qr) {
-    page.drawImage(f.qr, { x: innerX, y: footerY, width: 44, height: 44 });
+    const qrSize = 44;
+    const qrX = innerX + (innerW - qrSize) / 2;
+    page.drawImage(f.qr, { x: qrX, y: footerY, width: qrSize, height: qrSize });
   }
-  const tx = innerX + 52;
+  const tx = innerX;
   page.drawText('Altavista Sur, Carrera Gurí', { x: tx, y: footerY + 30, size: 7.5, font: f.regular, color: GRAY });
   page.drawText('Teléfono: 0424-922.95.39', { x: tx, y: footerY + 19, size: 7.5, font: f.regular, color: GRAY });
   page.drawText('@katdoc.mv', { x: tx, y: footerY + 8, size: 7.5, font: f.regular, color: GRAY });
