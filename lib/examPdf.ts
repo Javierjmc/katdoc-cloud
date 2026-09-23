@@ -21,7 +21,7 @@ export interface ExamPdfOptions {
   edad?: string;
 }
 
-const TEAL = rgb(0.31, 0.70, 0.75);
+const ACCENT = rgb(232 / 255, 114 / 255, 74 / 255); // #E8724A
 const DARK = rgb(0.12, 0.12, 0.12);
 const GRAY = rgb(0.45, 0.45, 0.45);
 const RED = rgb(0.80, 0.15, 0.15);
@@ -134,7 +134,7 @@ export async function buildExamPdf(
     for (const [label, value] of datos) {
       const x = MARGIN + col * colW;
       const labelText = `${label}: `;
-      page.drawText(labelText, { x, y: rowY, size: 9, font: bold, color: TEAL });
+      page.drawText(labelText, { x, y: rowY, size: 9, font: bold, color: ACCENT });
       const lw = bold.widthOfTextAtSize(labelText, 9);
       page.drawText(String(value), { x: x + lw, y: rowY, size: 10, font: regular, color: DARK });
       col += 1;
@@ -161,7 +161,7 @@ export async function buildExamPdf(
   for (const g of grupos) {
     ensureSpace(60);
     if (g.nombre) {
-      line(g.nombre.toUpperCase(), bold, 11, TEAL, 6);
+      line(g.nombre.toUpperCase(), bold, 11, ACCENT, 6);
     }
     // Cabecera de tabla
     ensureSpace(20);
@@ -170,7 +170,7 @@ export async function buildExamPdf(
     page.drawText('V/N', { x: COL_FLAG, y, size: 8, font: bold, color: GRAY });
     page.drawText('REFERENCIA', { x: COL_REF, y, size: 8, font: bold, color: GRAY });
     y -= 6;
-    page.drawLine({ start: { x: MARGIN, y }, end: { x: PAGE_W - MARGIN, y }, thickness: 0.7, color: TEAL });
+    page.drawLine({ start: { x: MARGIN, y }, end: { x: PAGE_W - MARGIN, y }, thickness: 0.7, color: ACCENT });
     y -= 12;
 
     for (const a of g.items) {
@@ -190,15 +190,15 @@ export async function buildExamPdf(
   }
 
   if (exam.interpretacion) {
-    line('INTERPRETACIÓN', bold, 11, TEAL, 6);
+    line('INTERPRETACIÓN', bold, 11, ACCENT, 6);
     line(exam.interpretacion, regular, 10, DARK, 12);
   }
   if (exam.observaciones) {
-    line('OBSERVACIONES', bold, 11, TEAL, 6);
+    line('OBSERVACIONES', bold, 11, ACCENT, 6);
     line(exam.observaciones, regular, 10, DARK, 12);
   }
   if (exam.notas) {
-    line('NOTAS', bold, 11, TEAL, 6);
+    line('NOTAS', bold, 11, ACCENT, 6);
     line(exam.notas, regular, 10, DARK, 12);
   }
 

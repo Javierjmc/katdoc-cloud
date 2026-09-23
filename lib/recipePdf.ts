@@ -1,8 +1,9 @@
 // lib/recipePdf.ts
 // ============================================================
 // S50: genera la Recipe en el FORMATO OFICIAL KATDOC.
-// Una hoja A4 con dos formularios (izquierda "Rp.", derecha "Ind."):
-// logo + FECHA, caja de datos del paciente, contenido y pie con QR.
+// Hoja A4 HORIZONTAL con dos formularios (izquierda "Rp.", derecha "Ind."):
+// logo + FECHA, caja de datos del paciente, watermark del logo, contenido y
+// pie con QR. Títulos y líneas en naranja de marca (#E8724A).
 // ============================================================
 
 import {
@@ -26,12 +27,12 @@ export interface RecipePdfOptions {
   tutor?: string;
 }
 
-const TEAL  = rgb(0.31, 0.70, 0.75);
+const ACCENT = rgb(232 / 255, 114 / 255, 74 / 255); // #E8724A
 const DARK  = rgb(0.12, 0.12, 0.12);
 const GRAY  = rgb(0.45, 0.45, 0.45);
 
-const PAGE_W = 595; // A4 vertical
-const PAGE_H = 842;
+const PAGE_W = 842; // A4 horizontal
+const PAGE_H = 595;
 const FIRMA_W = 95;
 
 type Fonts = { regular: PDFFont; bold: PDFFont; logo: PDFImage | null; qr: PDFImage | null; firma: PDFImage | null };
@@ -77,7 +78,7 @@ function drawLabelValue(
   y: number
 ): void {
   const labelText = `${label}: `;
-  page.drawText(labelText, { x, y, size: 8, font: f.bold, color: TEAL });
+  page.drawText(labelText, { x, y, size: 8, font: f.bold, color: ACCENT });
   const lw = f.bold.widthOfTextAtSize(labelText, 8);
   page.drawText(value, { x: x + lw, y, size: 9.5, font: f.regular, color: DARK });
 }
@@ -93,28 +94,42 @@ function drawForm(
   data: FormData,
   f: Fonts
 ): void {
-  page.drawRectangle({ x, y: bottom, width: w, height: top - bottom, borderColor: TEAL, borderWidth: 1.2 });
+  page.drawRectangle({ x, y: bottom, width: w, height: top - bottom, borderColor: ACCENT, borderWidth: 1.2 });
 
-  const pad = 10;
+  const pad = 12;
   const innerX = x + pad;
   const innerW = w - pad * 2;
+
+  // ── Marca de agua: logo KATDOC con baja opacidad, al centro ──
+  if (f.logo) {
+    const wmW = w * 0.5;
+    const wmH = (f.logo.height / f.logo.width) * wmW;
+    page.drawImage(f.logo, {
+      x: x + (w - wmW) / 2,
+      y: (top + bottom) / 2 - wmH / 2,
+      width: wmW,
+      height: wmH,
+      opacity: 0.07,
+    });
+  }
+
   let y = top - pad;
 
   // ── Membrete: logo + fecha ──
   if (f.logo) {
-    const lw = 50;
+    const lw = 70;
     const lh = (f.logo.height / f.logo.width) * lw;
     page.drawImage(f.logo, { x: innerX, y: y - lh, width: lw, height: lh });
   }
   const fechaText = `FECHA: ${data.fecha || '___/___/___'}`;
   const fw = f.regular.widthOfTextAtSize(fechaText, 9);
-  page.drawText(fechaText, { x: innerX + innerW - fw, y: y - 12, size: 9, font: f.regular, color: GRAY });
+  page.drawText(fechaText, { x: innerX + innerW - fw, y: y - 12, size: 9, font: f.regular, color: ACCENT });
 
-  y -= 56;
+  y -= 64;
 
   // ── Caja de datos del paciente ──
-  const boxH = 82;
-  page.drawRectangle({ x: innerX, y: y - boxH, width: innerW, height: boxH, borderColor: TEAL, borderWidth: 1 });
+  const boxH = 78;
+  page.drawRectangle({ x: innerX, y: y - boxH, width: innerW, height: boxH, borderColor: ACCENT, borderWidth: 1 });
   drawLabelValue(page, f, 'NOMBRE DEL PACIENTE', data.paciente, innerX + 6, y - 16);
   drawLabelValue(page, f, 'RAZA', data.raza, innerX + 6, y - 34);
   drawLabelValue(page, f, 'EDAD', data.edad, innerX + innerW / 2, y - 34);
@@ -123,8 +138,8 @@ function drawForm(
   y -= boxH + 16;
 
   // ── Título (Rp. / Ind.) ──
-  page.drawText(title, { x: innerX, y: y - 18, size: 22, font: f.bold, color: TEAL });
-  y -= 34;
+  page.drawText(title, { x: innerX, y: y - 18, size: 22, font: f.bold, color: ACCENT });
+  y -= 36;
 
   // ── Contenido ──
   const firmaH = f.firma ? (f.firma.height / f.firma.width) * FIRMA_W : 0;
@@ -166,7 +181,7 @@ function drawForm(
   page.drawText('@katdoc.mv', { x: tx, y: footerY + 8, size: 7.5, font: f.regular, color: GRAY });
 }
 
-/** Devuelve el PDF de la Recipe como Blob (formato oficial KATDOC). */
+/** Devuelve el PDF de la Recipe como Blob (formato oficial KATDOC, horizontal). */
 export async function buildRecipePdf(
   recipe: Pick<Prescription, 'titulo' | 'fecha' | 'medicamentos' | 'notas'>,
   opts: RecipePdfOptions = {}
@@ -183,8 +198,8 @@ export async function buildRecipePdf(
   const fonts: Fonts = { regular, bold, logo, qr, firma };
 
   const page = doc.addPage([PAGE_W, PAGE_H]);
-  const MARGIN = 20;
-  const GAP = 14;
+  const MARGIN = 16;
+  const GAP = 16;
   const COL_W = (PAGE_W - MARGIN * 2 - GAP) / 2;
   const TOP = PAGE_H - MARGIN;
   const BOTTOM = MARGIN;
@@ -204,19 +219,23 @@ export async function buildRecipePdf(
 
   const meds = (recipe.medicamentos ?? []).filter(m => m.nombre.trim() !== '');
 
-  const rpItems: Item[] = meds.map((m, i) => {
+  // Rp.: solo el medicamento y su presentación.
+  const rpItems: Item[] = meds.map((m, i) => ({
+    title: `${i + 1}. ${m.nombre}`,
+    lines: m.presentacion ? [`Presentación: ${m.presentacion}`] : [],
+  }));
+
+  // Ind.: indicaciones (dosis, frecuencia, duración, vía, indicaciones).
+  const indItems: Item[] = [];
+  meds.forEach((m, i) => {
     const lines: string[] = [];
-    if (m.presentacion) lines.push(`Presentación: ${m.presentacion}`);
     if (m.dosis) lines.push(`Dosis: ${m.dosis}`);
     if (m.frecuencia) lines.push(`Frecuencia: ${m.frecuencia}`);
     if (m.duracion) lines.push(`Duración: ${m.duracion}`);
     if (m.via) lines.push(`Vía: ${m.via}`);
-    return { title: `${i + 1}. ${m.nombre}`, lines };
+    if (m.indicaciones) lines.push(`Indicaciones: ${m.indicaciones}`);
+    if (lines.length) indItems.push({ title: `${i + 1}. ${m.nombre}`, lines });
   });
-
-  const indItems: Item[] = meds
-    .filter(m => m.indicaciones)
-    .map(m => ({ title: `• ${m.nombre}`, lines: [m.indicaciones as string] }));
   if (recipe.notas) indItems.push({ title: 'Notas', lines: [recipe.notas] });
   if (indItems.length === 0) indItems.push({ lines: ['—'] });
 
