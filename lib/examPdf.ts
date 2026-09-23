@@ -2,7 +2,6 @@
 // ============================================================
 // S51: genera el reporte de un examen de laboratorio en el
 // FORMATO KATDOC (referencia: docs/Pomerania Chocolate macho.pdf).
-// Títulos en naranja de marca, mayor espaciado y firma/sello.
 // ============================================================
 
 import {
@@ -22,7 +21,7 @@ export interface ExamPdfOptions {
   edad?: string;
 }
 
-const ACCENT = rgb(232 / 255, 114 / 255, 74 / 255); // #E8724A
+const TEAL = rgb(0.31, 0.70, 0.75);
 const DARK = rgb(0.12, 0.12, 0.12);
 const GRAY = rgb(0.45, 0.45, 0.45);
 const RED = rgb(0.80, 0.15, 0.15);
@@ -49,9 +48,9 @@ function wrap(text: string, font: PDFFont, size: number, maxWidth: number): stri
   return lines;
 }
 
-async function embedJpgAsset(doc: PDFDocument, url: string): Promise<PDFImage | null> {
+async function embedLogo(doc: PDFDocument): Promise<PDFImage | null> {
   try {
-    const res = await fetch(url);
+    const res = await fetch('/logo-katdoc.jpg');
     if (!res.ok) return null;
     const bytes = await res.arrayBuffer();
     return await doc.embedJpg(bytes);
@@ -67,10 +66,7 @@ export async function buildExamPdf(
   const doc = await PDFDocument.create();
   const regular = await doc.embedFont(StandardFonts.Helvetica);
   const bold = await doc.embedFont(StandardFonts.HelveticaBold);
-  const [logo, firma] = await Promise.all([
-    embedJpgAsset(doc, '/logo-katdoc.jpg'),
-    embedJpgAsset(doc, '/sello-firma.jpg'),
-  ]);
+  const logo = await embedLogo(doc);
 
   let page: PDFPage = doc.addPage([PAGE_W, PAGE_H]);
   let y = PAGE_H - MARGIN;
@@ -99,12 +95,6 @@ export async function buildExamPdf(
     y -= gap - (size + 3);
   };
 
-  /** Título de sección con espaciado generoso debajo. */
-  const sectionTitle = (text: string) => {
-    ensureSpace(38);
-    line(text, bold, 12, ACCENT, 22);
-  };
-
   // ── Membrete ──
   if (logo) {
     const lw = 54;
@@ -119,13 +109,13 @@ export async function buildExamPdf(
     const fw = regular.widthOfTextAtSize(ft, 10);
     page.drawText(ft, { x: PAGE_W - MARGIN - fw, y: y - 14, size: 10, font: regular, color: GRAY });
   }
-  y -= 66;
+  y -= 62;
 
-  line('ANÁLISIS', bold, 15, ACCENT, 16);
-  if (exam.descripcion) line(`DESCRIPCIÓN: ${exam.descripcion}`, regular, 10, GRAY, 4);
-  if (exam.medico_solicitante) line(`MÉDICO SOLICITANTE: ${exam.medico_solicitante}`, regular, 10, GRAY, 4);
-  if (exam.rif) line(`RIF: ${exam.rif}`, regular, 10, GRAY, 4);
-  y -= 12;
+  line('ANÁLISIS', bold, 15, DARK, 12);
+  if (exam.descripcion) line(`DESCRIPCIÓN: ${exam.descripcion}`, regular, 10, GRAY, 2);
+  if (exam.medico_solicitante) line(`MÉDICO SOLICITANTE: ${exam.medico_solicitante}`, regular, 10, GRAY, 2);
+  if (exam.rif) line(`RIF: ${exam.rif}`, regular, 10, GRAY, 2);
+  y -= 8;
 
   // ── Datos del paciente ──
   const datos: [string, string | undefined][] = [
@@ -141,14 +131,14 @@ export async function buildExamPdf(
     for (const [label, value] of datos) {
       const x = MARGIN + col * colW;
       const labelText = `${label}: `;
-      page.drawText(labelText, { x, y: rowY, size: 9, font: bold, color: ACCENT });
+      page.drawText(labelText, { x, y: rowY, size: 9, font: bold, color: TEAL });
       const lw = bold.widthOfTextAtSize(labelText, 9);
       page.drawText(String(value), { x: x + lw, y: rowY, size: 10, font: regular, color: DARK });
       col += 1;
-      if (col === 2) { col = 0; rowY -= 18; }
+      if (col === 2) { col = 0; rowY -= 16; }
     }
-    y = rowY - (col === 0 ? 4 : 22);
-    y -= 10;
+    y = rowY - (col === 0 ? 4 : 20);
+    y -= 6;
   }
 
   // ── Analitos agrupados por sección ──
@@ -166,18 +156,19 @@ export async function buildExamPdf(
   const COL_REF = MARGIN + 390;
 
   for (const g of grupos) {
-    ensureSpace(64);
-    if (g.nombre) sectionTitle(g.nombre.toUpperCase());
-
+    ensureSpace(60);
+    if (g.nombre) {
+      line(g.nombre.toUpperCase(), bold, 11, TEAL, 6);
+    }
     // Cabecera de tabla
     ensureSpace(20);
     page.drawText('ANALITO', { x: COL_NOMBRE, y, size: 8, font: bold, color: GRAY });
     page.drawText('RESULTADO', { x: COL_VALOR, y, size: 8, font: bold, color: GRAY });
     page.drawText('V/N', { x: COL_FLAG, y, size: 8, font: bold, color: GRAY });
     page.drawText('REFERENCIA', { x: COL_REF, y, size: 8, font: bold, color: GRAY });
-    y -= 7;
-    page.drawLine({ start: { x: MARGIN, y }, end: { x: PAGE_W - MARGIN, y }, thickness: 0.7, color: ACCENT });
-    y -= 14;
+    y -= 6;
+    page.drawLine({ start: { x: MARGIN, y }, end: { x: PAGE_W - MARGIN, y }, thickness: 0.7, color: TEAL });
+    y -= 12;
 
     for (const a of g.items) {
       ensureSpace(16);
@@ -192,31 +183,20 @@ export async function buildExamPdf(
       page.drawText(a.rango ?? '', { x: COL_REF, y, size: 8.5, font: regular, color: GRAY });
       y -= 14;
     }
-    y -= 12;
+    y -= 8;
   }
 
   if (exam.interpretacion) {
-    sectionTitle('INTERPRETACIÓN');
-    line(exam.interpretacion, regular, 10, DARK, 18);
+    line('INTERPRETACIÓN', bold, 11, TEAL, 6);
+    line(exam.interpretacion, regular, 10, DARK, 12);
   }
   if (exam.observaciones) {
-    sectionTitle('OBSERVACIONES');
-    line(exam.observaciones, regular, 10, DARK, 18);
+    line('OBSERVACIONES', bold, 11, TEAL, 6);
+    line(exam.observaciones, regular, 10, DARK, 12);
   }
   if (exam.notas) {
-    sectionTitle('NOTAS');
-    line(exam.notas, regular, 10, DARK, 18);
-  }
-
-  // ── Firma y sello ──
-  if (firma) {
-    const fw = 170;
-    const fh = (firma.height / firma.width) * fw;
-    ensureSpace(fh + 30);
-    y -= 18;
-    const fx = PAGE_W - MARGIN - fw;
-    page.drawImage(firma, { x: fx, y: y - fh, width: fw, height: fh });
-    y -= fh;
+    line('NOTAS', bold, 11, TEAL, 6);
+    line(exam.notas, regular, 10, DARK, 12);
   }
 
   const bytes = await doc.save();
