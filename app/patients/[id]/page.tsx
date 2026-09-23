@@ -1,9 +1,9 @@
 'use client';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { usePatient, updatePatient } from '@/hooks/usePatients';
+import { usePatient, updatePatient, deletePatient } from '@/hooks/usePatients';
 import { useMedicalRecords } from '@/hooks/useMedicalRecords';
 import { useAuthGuard } from '@/hooks/useAuthGuard';
 import AppShell from '@/components/AppShell';
@@ -21,12 +21,15 @@ import { calcularEdad, formatearFechaCorta } from '@/lib/utils';
 
 export default function PatientProfilePage() {
   const { id } = useParams<{ id: string }>();
+  const router = useRouter();
   const { patient, loading: pLoading, refetch } = usePatient(id);
   const { records, loading: rLoading } = useMedicalRecords(id);
   const { toast } = useToast();
   const { ready } = useAuthGuard();
   const [confirmToggle, setConfirmToggle] = useState(false);
   const [toggling, setToggling] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [photoOpen, setPhotoOpen] = useState(false);
   // S47: historial minimizable.
   const [historialOpen, setHistorialOpen] = useState(true);
@@ -50,6 +53,19 @@ export default function PatientProfilePage() {
     } else {
       toast(isActive ? 'Paciente desactivado' : 'Paciente activado', 'success');
       refetch();
+    }
+  };
+
+  const handleDeletePatient = async () => {
+    setDeleting(true);
+    const { error } = await deletePatient(patient.id);
+    setDeleting(false);
+    setConfirmDelete(false);
+    if (error) {
+      toast(`Error al eliminar: ${error}`, 'error');
+    } else {
+      toast('Paciente eliminado', 'success');
+      router.push('/patients');
     }
   };
 
@@ -136,6 +152,15 @@ export default function PatientProfilePage() {
                 >
                   {isActive ? '🚫 Desactivar paciente' : '✅ Activar paciente'}
                 </button>
+                {!isActive && (
+                  <button
+                    onClick={() => setConfirmDelete(true)}
+                    disabled={deleting}
+                    className="mt-2 w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold bg-red-600 hover:bg-red-700 text-white transition-colors disabled:opacity-50"
+                  >
+                    🗑️ Eliminar paciente
+                  </button>
+                )}
               </div>
             </div>
 
@@ -149,6 +174,17 @@ export default function PatientProfilePage() {
               danger={isActive}
               onConfirm={handleToggleActive}
               onCancel={() => setConfirmToggle(false)}
+            />
+
+            <ConfirmDialog
+              open={confirmDelete}
+              title="Eliminar paciente"
+              message={`¿Eliminar definitivamente a ${patient.nombre}? Se borrarán también sus consultas, vacunas, exámenes, recetas y estudios. Esta acción no se puede deshacer.`}
+              confirmLabel="Eliminar"
+              danger
+              loading={deleting}
+              onConfirm={handleDeletePatient}
+              onCancel={() => setConfirmDelete(false)}
             />
 
             {/* Propietario */}

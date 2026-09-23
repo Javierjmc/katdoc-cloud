@@ -150,3 +150,26 @@ export async function updatePatient(
 
   return { error: error?.message ?? null };
 }
+
+// ─── Función: eliminar paciente ─────────────────────────────
+// Borra el paciente (las tablas relacionadas caen por ON DELETE CASCADE)
+// y hace un best-effort de limpieza de sus fotos en Storage.
+export async function deletePatient(patientId: string): Promise<{ error: string | null }> {
+  try {
+    const { data: files } = await supabase.storage.from('pet-photos').list(patientId);
+    if (files && files.length > 0) {
+      await supabase.storage
+        .from('pet-photos')
+        .remove(files.map(f => `${patientId}/${f.name}`));
+    }
+  } catch {
+    /* sin permiso de borrado en Storage: se ignora */
+  }
+
+  const { error } = await supabase
+    .from('patients')
+    .delete()
+    .eq('id', patientId);
+
+  return { error: error?.message ?? null };
+}
