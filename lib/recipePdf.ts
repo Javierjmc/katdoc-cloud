@@ -32,8 +32,9 @@ const GRAY  = rgb(0.45, 0.45, 0.45);
 
 const PAGE_W = 595; // A4 vertical
 const PAGE_H = 842;
+const FIRMA_W = 95;
 
-type Fonts = { regular: PDFFont; bold: PDFFont; logo: PDFImage | null; qr: PDFImage | null };
+type Fonts = { regular: PDFFont; bold: PDFFont; logo: PDFImage | null; qr: PDFImage | null; firma: PDFImage | null };
 type FormData = { fecha: string; paciente: string; propietario: string; raza: string; edad: string; peso: string };
 type Item = { title?: string; lines: string[] };
 
@@ -126,7 +127,8 @@ function drawForm(
   y -= 34;
 
   // ── Contenido ──
-  const footerTop = bottom + pad + 52;
+  const firmaH = f.firma ? (f.firma.height / f.firma.width) * FIRMA_W : 0;
+  const footerTop = bottom + pad + 52 + (firmaH ? firmaH + 8 : 0);
   for (const item of items) {
     if (y < footerTop + 14) break;
     if (item.title) {
@@ -144,6 +146,13 @@ function drawForm(
       }
     }
     y -= 5;
+  }
+
+  // ── Firma y sello del médico veterinario ──
+  if (f.firma) {
+    const fx = innerX + innerW - FIRMA_W;
+    const fy = bottom + pad + 52;
+    page.drawImage(f.firma, { x: fx, y: fy, width: FIRMA_W, height: firmaH });
   }
 
   // ── Pie: QR + contacto ──
@@ -166,11 +175,12 @@ export async function buildRecipePdf(
   const regular = await doc.embedFont(StandardFonts.Helvetica);
   const bold = await doc.embedFont(StandardFonts.HelveticaBold);
 
-  const [logo, qr] = await Promise.all([
+  const [logo, qr, firma] = await Promise.all([
     embedAsset(doc, '/logo-katdoc.jpg'),
     embedAsset(doc, '/qr-katdoc.jpg'),
+    embedAsset(doc, '/sello-firma.jpg'),
   ]);
-  const fonts: Fonts = { regular, bold, logo, qr };
+  const fonts: Fonts = { regular, bold, logo, qr, firma };
 
   const page = doc.addPage([PAGE_W, PAGE_H]);
   const MARGIN = 20;
