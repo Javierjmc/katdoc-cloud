@@ -48,9 +48,9 @@ function wrap(text: string, font: PDFFont, size: number, maxWidth: number): stri
   return lines;
 }
 
-async function embedLogo(doc: PDFDocument): Promise<PDFImage | null> {
+async function embedJpgAsset(doc: PDFDocument, url: string): Promise<PDFImage | null> {
   try {
-    const res = await fetch('/logo-katdoc.jpg');
+    const res = await fetch(url);
     if (!res.ok) return null;
     const bytes = await res.arrayBuffer();
     return await doc.embedJpg(bytes);
@@ -66,7 +66,10 @@ export async function buildExamPdf(
   const doc = await PDFDocument.create();
   const regular = await doc.embedFont(StandardFonts.Helvetica);
   const bold = await doc.embedFont(StandardFonts.HelveticaBold);
-  const logo = await embedLogo(doc);
+  const [logo, firma] = await Promise.all([
+    embedJpgAsset(doc, '/logo-katdoc.jpg'),
+    embedJpgAsset(doc, '/sello-firma.jpg'),
+  ]);
 
   let page: PDFPage = doc.addPage([PAGE_W, PAGE_H]);
   let y = PAGE_H - MARGIN;
@@ -92,7 +95,7 @@ export async function buildExamPdf(
       page.drawText(l, { x: MARGIN + indent, y, size, font, color });
       y -= size + 3;
     }
-    y -= gap - (size + 3);
+    y -= gap;
   };
 
   // ── Membrete ──
@@ -197,6 +200,17 @@ export async function buildExamPdf(
   if (exam.notas) {
     line('NOTAS', bold, 11, TEAL, 6);
     line(exam.notas, regular, 10, DARK, 12);
+  }
+
+  // ── Firma y sello del médico veterinario ──
+  if (firma) {
+    const fw = 140;
+    const fh = (firma.height / firma.width) * fw;
+    ensureSpace(fh + 16);
+    y -= 10;
+    const fx = PAGE_W - MARGIN - fw;
+    page.drawImage(firma, { x: fx, y: y - fh, width: fw, height: fh });
+    y -= fh;
   }
 
   const bytes = await doc.save();
