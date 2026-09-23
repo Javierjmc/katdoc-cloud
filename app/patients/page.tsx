@@ -11,12 +11,13 @@ import { useLoadMore } from '@/hooks/useLoadMore';
 import { useAuthGuard } from '@/hooks/useAuthGuard';
 import { LoadMoreButton, ImageLightbox } from '@/components/ui';
 import { PageLoader } from '@/components/ui/Badge';
-import { calcularEdad } from '@/lib/utils';
+import { calcularEdad, isoToFechaInput } from '@/lib/utils';
 
 type PatientRow = {
   id: string; nombre: string; especie: string; raza?: string;
   sexo?: string; color?: string; fecha_nacimiento?: string; photo_url?: string;
   active?: boolean;
+  created_at?: string;
   tutor: { nombre: string; cedula: string; telefono?: string };
 };
 
@@ -29,6 +30,9 @@ export default function PatientsPage() {
   const [view, setView]        = useLocalStorage<'grid' | 'list'>('patients_view', 'grid');
   const [tab, setTab]          = useLocalStorage<TabKey>('patients_tab', 'activos');
   const [filterEspecie, setFilterEspecie] = useLocalStorage('patients_especie', '');
+  // S47: filtro por fecha de registro.
+  const [desde, setDesde] = useState('');
+  const [hasta, setHasta] = useState('');
   const debouncedSearch = useDebounce(search, 250);
   const { ready } = useAuthGuard();
   const [lightbox, setLightbox] = useState<string | null>(null);
@@ -47,9 +51,16 @@ export default function PatientsPage() {
     const q = debouncedSearch.toLowerCase().trim();
     return tabPatients.filter(p => {
       const matchSearch = !q || [p.nombre, p.raza ?? '', p.tutor?.nombre ?? '', p.tutor?.cedula ?? ''].some(f => f.toLowerCase().includes(q));
-      return matchSearch && (!filterEspecie || p.especie === filterEspecie);
+      if (!matchSearch || (filterEspecie && p.especie !== filterEspecie)) return false;
+      if (desde || hasta) {
+        const f = p.created_at ? isoToFechaInput(p.created_at) : '';
+        if (!f) return false;
+        if (desde && f < desde) return false;
+        if (hasta && f > hasta) return false;
+      }
+      return true;
     });
-  }, [tabPatients, debouncedSearch, filterEspecie]);
+  }, [tabPatients, debouncedSearch, filterEspecie, desde, hasta]);
 
   const PAGE_SIZE = 12;
   const { visible, hasMore, loadMore } = useLoadMore(filtered, PAGE_SIZE);
@@ -105,6 +116,19 @@ export default function PatientsPage() {
                 {e || 'Todos'}
               </button>
             ))}
+          </div>
+          {/* S47: filtro por fecha de registro */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-xs font-semibold text-surface-500 dark:text-surface-400">Registro:</span>
+            <input type="date" value={desde} onChange={e => setDesde(e.target.value)} aria-label="Registro desde"
+              className="px-2 py-1.5 rounded-lg text-xs bg-surface-50 dark:bg-surface-900 border border-surface-200 dark:border-surface-700 text-surface-700 dark:text-surface-200 focus:outline-none focus:border-brand-400" />
+            <span className="text-surface-400 text-xs">–</span>
+            <input type="date" value={hasta} onChange={e => setHasta(e.target.value)} aria-label="Registro hasta"
+              className="px-2 py-1.5 rounded-lg text-xs bg-surface-50 dark:bg-surface-900 border border-surface-200 dark:border-surface-700 text-surface-700 dark:text-surface-200 focus:outline-none focus:border-brand-400" />
+            {(desde || hasta) && (
+              <button onClick={() => { setDesde(''); setHasta(''); }}
+                className="text-xs font-semibold text-surface-500 dark:text-surface-400 hover:text-brand-500">Limpiar</button>
+            )}
           </div>
         </div>
 
