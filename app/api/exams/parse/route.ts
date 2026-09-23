@@ -30,6 +30,7 @@ export async function POST(request: Request) {
       'image/jpeg',
       'image/png',
       'image/webp',
+      'image/bmp',
     ];
     if (!allowed.includes(file.type)) {
       return NextResponse.json({ error: 'Tipo de archivo no soportado' }, { status: 400 });

@@ -201,5 +201,7 @@ function statusBadge(v: Vaccination) {
 }
 
 function formatearFecha(fecha: string): string {
-  return new Date(fecha).toLocaleDateString('es-VE');
+  // S46: las fechas DATE se interpretan como locales (evita el día anterior).
+  const iso = /^\d{4}-\d{2}-\d{2}$/.test(fecha) ? `${fecha}T12:00:00` : fecha;
+  return new Date(iso).toLocaleDateString('es-VE');
 }

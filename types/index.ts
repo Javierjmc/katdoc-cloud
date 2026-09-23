@@ -90,6 +90,8 @@ export type LabAnalyte = {
   unidad?: string;
   rango?: string;
   flag?: 'N' | 'ALTO' | 'BAJO';
+  /** S51: sección a la que pertenece (ej. "Hematología", "Fórmula leucocitaria"). */
+  grupo?: string;
 };
 
 export type LaboratoryExam = {
@@ -102,6 +104,12 @@ export type LaboratoryExam = {
   fecha_proximo_control?: string;
   analitos: LabAnalyte[];
   notas?: string;
+  // S51: campos extraídos del documento (encabezado e interpretación).
+  descripcion?: string;
+  medico_solicitante?: string;
+  rif?: string;
+  interpretacion?: string;
+  observaciones?: string;
   file_url?: string;
   file_type?: string;
   created_at: string;
@@ -125,6 +133,8 @@ export type Prescription = {
   fecha?: string;
   medicamentos: PrescriptionMedication[];
   notas?: string;
+  /** S50: peso (kg) con el que se emite la recipe. */
+  peso?: number | null;
   created_at: string;
 };
 
@@ -294,6 +304,7 @@ export const SISTEMAS_CONFIG: SistemaConfig[] = [
 // Opciones de actitud/temperamento
 export const ACTITUD_OPTIONS = [
   'Alerta',
+  'Tranquilo',
   'Letárgico',
   'Comatoso',
   'Hiperactivo',

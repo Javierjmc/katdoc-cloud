@@ -21,7 +21,7 @@ import { Button } from '@/components/ui/Button';
 import { EmptyState } from '@/components/ui/Badge';
 import { ImageLightbox } from '@/components/ui';
 import { ALLOWED_IMAGE_TYPES, MAX_PHOTO_SIZE, MAX_DOCUMENT_SIZE } from '@/lib/constants';
-import { hoyLocal } from '@/lib/utils';
+import { hoyLocal, formatearFechaCorta } from '@/lib/utils';
 import type { Ecografia, EcografiaArchivo, EcografiaMedicion } from '@/types';
 
 type EditorState = {
@@ -89,7 +89,7 @@ export default function EcografiasSection({ patientId }: { patientId: string }) 
     if (!files || !editor) return;
     const accepted: File[] = [];
     for (const f of Array.from(files)) {
-      if (!ALLOWED_IMAGE_TYPES.includes(f.type)) { toast('Solo imágenes (JPG/PNG/WebP)', 'error'); continue; }
+      if (!ALLOWED_IMAGE_TYPES.includes(f.type)) { toast('Solo imágenes (JPG/PNG/WebP/BMP)', 'error'); continue; }
       if (f.size > MAX_PHOTO_SIZE) { toast('Imagen supera los 5 MB', 'error'); continue; }
       accepted.push(f);
     }
@@ -222,7 +222,7 @@ export default function EcografiasSection({ patientId }: { patientId: string }) 
                     Ecografía / Rayos X{eco.organo ? ` · ${eco.organo} (legacy)` : ''}
                   </p>
                   <p className="text-xs text-surface-500 dark:text-surface-400">
-                    {eco.fecha ? new Date(eco.fecha).toLocaleDateString('es-VE') : 'Sin fecha'}
+                    {eco.fecha ? formatearFechaCorta(eco.fecha) : 'Sin fecha'}
                     {eco.imagenes.length > 0 && ` · ${eco.imagenes.length} imagen${eco.imagenes.length !== 1 ? 'es' : ''}`}
                     {(eco.archivos?.length ?? 0) > 0 && ` · ${eco.archivos?.length} PDF`}
                   </p>
@@ -288,7 +288,7 @@ export default function EcografiasSection({ patientId }: { patientId: string }) 
                 <p className="text-xs font-black text-surface-600 dark:text-surface-300 uppercase tracking-wide">Imágenes</p>
                 <label className="text-xs font-bold text-brand-500 hover:text-brand-600 cursor-pointer">
                   + Subir imágenes
-                  <input type="file" className="hidden" accept="image/jpeg,image/png,image/webp" multiple onChange={e => handleImages(e.target.files)} />
+                  <input type="file" className="hidden" accept="image/jpeg,image/png,image/webp,image/bmp" multiple onChange={e => handleImages(e.target.files)} />
                 </label>
               </div>
               {(editor.imagenes.length > 0 || editor.pendingImages.length > 0) ? (

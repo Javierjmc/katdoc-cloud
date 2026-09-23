@@ -16,7 +16,7 @@ export const MAX_PHOTO_SIZE    = 5  * 1024 * 1024;  // 5 MB
 export const MAX_DOCUMENT_SIZE = 10 * 1024 * 1024;  // 10 MB
 
 // Tipos de archivo permitidos
-export const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+export const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/bmp'];
 export const ALLOWED_DOC_TYPES   = ['application/pdf'];
 // S44: adjuntos de una consulta (fotos + documentos).
 export const ALLOWED_ATTACHMENT_TYPES = [...ALLOWED_IMAGE_TYPES, ...ALLOWED_DOC_TYPES];

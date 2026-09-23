@@ -144,14 +144,73 @@ export default function ReportePage() {
                 {records.length === 0 ? (
                   <p className="text-sm text-surface-400 dark:text-surface-500">Sin consultas registradas.</p>
                 ) : (
-                  <div className="space-y-2">
-                    {records.map(r => (
-                      <div key={r.id} className="text-sm">
-                        <p className="font-semibold">{r.numero_historia} · {formatearFecha(r.fecha_consulta)}</p>
-                        {r.motivo_consulta && <p className="text-surface-600 dark:text-surface-300">{r.motivo_consulta}</p>}
-                        {r.descripcion_hallazgos && <p className="text-surface-600 dark:text-surface-300 whitespace-pre-wrap">{r.descripcion_hallazgos}</p>}
-                      </div>
-                    ))}
+                  <div className="space-y-4">
+                    {records.map(r => {
+                      const tieneConstantes = r.peso != null || r.f_respiratoria || r.f_cardiaca ||
+                        r.temperatura != null || r.pulso || r.tiempo_llenado_capilar ||
+                        r.ganglios_linfaticos || r.mucosas || r.actitud_temperamento;
+                      const tieneAnamnesis = r.ultima_desparasitacion || r.vacunas || r.enfermedades_anteriores ||
+                        r.tratamientos_actuales || r.evolucion || r.alimentacion || r.historial_reproductivo ||
+                        r.ultimo_celo || r.fecha_ultimo_parto;
+                      return (
+                        <div key={r.id} className="consulta-print border border-surface-200 dark:border-surface-700 rounded-lg p-3">
+                          <p className="font-semibold text-sm">{r.numero_historia} · {formatearFecha(r.fecha_consulta)}</p>
+                          {r.motivo_consulta && <p className="text-sm mt-1"><span className="font-semibold">Motivo:</span> {r.motivo_consulta}</p>}
+
+                          {tieneConstantes && (
+                            <div className="mt-2">
+                              <p className="text-xs font-black uppercase tracking-wide text-surface-500 dark:text-surface-400">Constantes vitales</p>
+                              <div className="grid grid-cols-2 gap-x-4 gap-y-0.5 text-xs mt-1">
+                                <ReportRow label="Peso" value={r.peso != null ? `${r.peso} kg` : undefined} />
+                                <ReportRow label="Frec. respiratoria" value={r.f_respiratoria} />
+                                <ReportRow label="Frec. cardíaca" value={r.f_cardiaca} />
+                                <ReportRow label="Temperatura" value={r.temperatura != null ? `${r.temperatura} °C` : undefined} />
+                                <ReportRow label="Pulso" value={r.pulso} />
+                                <ReportRow label="T. llenado capilar" value={r.tiempo_llenado_capilar} />
+                                <ReportRow label="Ganglios" value={r.ganglios_linfaticos} />
+                                <ReportRow label="Mucosas" value={r.mucosas} />
+                                <ReportRow label="Actitud" value={r.actitud_temperamento} />
+                              </div>
+                            </div>
+                          )}
+
+                          {r.sistemas_status && (
+                            <div className="mt-2">
+                              <p className="text-xs font-black uppercase tracking-wide text-surface-500 dark:text-surface-400">Órganos y sistemas</p>
+                              <div className="grid grid-cols-2 gap-x-4 gap-y-0.5 text-xs mt-1">
+                                {SISTEMAS_CONFIG.map(s => (
+                                  <p key={s.key}>
+                                    <span className="font-semibold">{s.label}:</span> {r.sistemas_status?.[s.key] ?? 'NE'}
+                                    {r.sistemas_notas?.[s.key] && <span className="text-surface-500 dark:text-surface-400"> — {r.sistemas_notas[s.key]}</span>}
+                                  </p>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {tieneAnamnesis && (
+                            <div className="mt-2">
+                              <p className="text-xs font-black uppercase tracking-wide text-surface-500 dark:text-surface-400">Anamnesis</p>
+                              <div className="space-y-0.5 text-xs mt-1">
+                                <ReportLine label="Desparasitación" value={r.ultima_desparasitacion} />
+                                <ReportLine label="Vacunas" value={r.vacunas} />
+                                <ReportLine label="Enfermedades" value={r.enfermedades_anteriores} />
+                                <ReportLine label="Tratamientos" value={r.tratamientos_actuales} />
+                                <ReportLine label="Evolución" value={r.evolucion} />
+                                <ReportLine label="Alimentación" value={r.alimentacion} />
+                                <ReportLine label="Reproductivo" value={r.historial_reproductivo} />
+                                <ReportLine label="Último celo" value={r.ultimo_celo} />
+                                <ReportLine label="Último parto" value={r.fecha_ultimo_parto} />
+                              </div>
+                            </div>
+                          )}
+
+                          {r.descripcion_hallazgos && (
+                            <p className="text-xs mt-2 whitespace-pre-wrap"><span className="font-semibold">Hallazgos:</span> {r.descripcion_hallazgos}</p>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
               </section>
@@ -302,3 +361,18 @@ export default function ReportePage() {
     </AppShell>
   );
 }
+
+function ReportRow({ label, value }: { label: string; value?: string | number | null }) {
+  if (value === undefined || value === null || value === '') return null;
+  return (
+    <p><span className="font-semibold">{label}:</span> {value}</p>
+  );
+}
+
+function ReportLine({ label, value }: { label: string; value?: string | null }) {
+  if (!value) return null;
+  return (
+    <p className="whitespace-pre-wrap"><span className="font-semibold">{label}:</span> {value}</p>
+  );
+}
+

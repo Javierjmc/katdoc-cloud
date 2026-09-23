@@ -10,7 +10,8 @@ import { Field, Input, Textarea, Select } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { EmptyState } from '@/components/ui/Badge';
 import { appointmentSchema, validateSchema, type FieldErrors } from '@/lib/schemas';
-import { isPastDateTime } from '@/lib/utils';
+import { isPastDateTime, formatearFechaCorta } from '@/lib/utils';
+import { buildWhatsAppLink, buildMensajeCita } from '@/lib/notifications/messages';
 import { APPOINTMENT_STATES, type Appointment, type AppointmentState } from '@/types';
 
 type EditorState = {
@@ -225,16 +226,39 @@ function CitaRow({ a, onEdit, onDelete, onChangeState }: {
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 flex-wrap">
           <p className="font-bold text-sm text-surface-800 dark:text-white">
-            {new Date(a.fecha).toLocaleDateString('es-VE')}
+            {formatearFechaCorta(a.fecha)}
             {a.hora && <span className="font-semibold text-surface-400 dark:text-surface-500 ml-1">· {a.hora}</span>}
           </p>
           {stateBadge(a.estado)}
         </div>
         {a.motivo && <p className="text-xs text-surface-500 dark:text-surface-400 mt-0.5">{a.motivo}</p>}
         {a.notas && <p className="text-xs text-surface-400 dark:text-surface-500 mt-0.5">{a.notas}</p>}
+        {a.tutor?.nombre && (
+          <p className="text-xs text-surface-500 dark:text-surface-400 mt-0.5">
+            👤 {a.tutor.nombre}{a.tutor.telefono && <> · 📞 {a.tutor.telefono}</>}
+          </p>
+        )}
       </div>
 
       <div className="flex gap-1 shrink-0 items-center">
+        {a.tutor?.telefono && (
+          <button
+            onClick={() => {
+              const link = buildWhatsAppLink(a.tutor!.telefono, buildMensajeCita({
+                paciente: a.patient?.nombre ?? a.nombre_paciente,
+                tutor: a.tutor!.nombre,
+                fecha: a.fecha,
+                hora: a.hora,
+                motivo: a.motivo,
+              }));
+              if (link) window.open(link, '_blank');
+            }}
+            className="w-8 h-8 rounded-lg bg-green-50 hover:bg-green-100 text-green-700 text-xs"
+            aria-label="Recordar por WhatsApp"
+          >
+            📲
+          </button>
+        )}
         <select
           value={a.estado}
           onChange={e => onChangeState(e.target.value as AppointmentState)}

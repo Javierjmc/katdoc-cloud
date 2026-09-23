@@ -15,6 +15,7 @@ import { useAuthGuard } from '@/hooks/useAuthGuard';
 import { createAppointment } from '@/hooks/useAppointments';
 import { appointmentSchema, validateSchema, type FieldErrors } from '@/lib/schemas';
 import { isPastDateTime, normalizePhoneForWhatsApp } from '@/lib/utils';
+import { buildWhatsAppLink, buildMensajeCita } from '@/lib/notifications/messages';
 import Link from 'next/link';
 
 const WEEKDAYS = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
@@ -52,6 +53,19 @@ export default function AgendaPage() {
   const [dayModal, setDayModal] = useState<string | null>(null);
   const { toast } = useToast();
   const { ready } = useAuthGuard();
+
+  // S48: recordatorio de cita por WhatsApp desde el modal del día.
+  const recordarWhatsApp = (e: CalendarEvent) => {
+    const link = buildWhatsAppLink(e.tutorTelefono, buildMensajeCita({
+      paciente: e.patientNombre,
+      tutor: e.tutorNombre,
+      fecha: e.fecha,
+      hora: e.hora,
+      motivo: e.titulo,
+    }));
+    if (!link) { toast('El propietario no tiene un teléfono válido para WhatsApp', 'error'); return; }
+    window.open(link, '_blank');
+  };
 
   const from = `${year}-${String(month + 1).padStart(2, '0')}-01`;
   const to = `${year}-${String(month + 1).padStart(2, '0')}-${String(new Date(year, month + 1, 0).getDate()).padStart(2, '0')}`;
@@ -273,6 +287,20 @@ export default function AgendaPage() {
                             {e.hora && <> · 🕐 {e.hora}</>}
                             {e.subtitulo && <> · {e.subtitulo}</>}
                           </p>
+                          {e.type === 'cita' && (e.tutorNombre || e.tutorTelefono) && (
+                            <div className="flex items-center justify-between gap-2 mt-2 flex-wrap">
+                              <p className="text-xs text-surface-500 dark:text-surface-400">
+                                👤 {e.tutorNombre ?? 'Propietario'}{e.tutorTelefono && <> · 📞 {e.tutorTelefono}</>}
+                              </p>
+                              <button
+                                type="button"
+                                onClick={() => recordarWhatsApp(e)}
+                                className="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-green-50 text-green-700 border border-green-200 hover:bg-green-100 transition-colors"
+                              >
+                                📲 Recordar por WhatsApp
+                              </button>
+                            </div>
+                          )}
                         </div>
                       </div>
                     ))}

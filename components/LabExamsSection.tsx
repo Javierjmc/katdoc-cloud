@@ -19,6 +19,7 @@ import { Button } from '@/components/ui/Button';
 import { EmptyState } from '@/components/ui/Badge';
 import { ALLOWED_IMAGE_TYPES, ALLOWED_DOC_TYPES, MAX_DOCUMENT_SIZE } from '@/lib/constants';
 import { appPinHeader } from '@/lib/api-auth';
+import { formatearFechaCorta } from '@/lib/utils';
 import type { LabAnalyte, LaboratoryExam } from '@/types';
 
 type EditorState = {
@@ -29,6 +30,11 @@ type EditorState = {
   fecha_examen: string;
   fecha_proximo_control: string;
   notas: string;
+  descripcion: string;
+  medico_solicitante: string;
+  rif: string;
+  interpretacion: string;
+  observaciones: string;
   analitos: LabAnalyte[];
   file: File | null;
   hasFile: boolean;
@@ -45,6 +51,11 @@ function fromExam(e: LaboratoryExam): EditorState {
     fecha_examen: e.fecha_examen ?? '',
     fecha_proximo_control: e.fecha_proximo_control ?? '',
     notas: e.notas ?? '',
+    descripcion: e.descripcion ?? '',
+    medico_solicitante: e.medico_solicitante ?? '',
+    rif: e.rif ?? '',
+    interpretacion: e.interpretacion ?? '',
+    observaciones: e.observaciones ?? '',
     analitos: e.analitos ?? [],
     file: null,
     hasFile: !!e.file_url,
@@ -59,13 +70,24 @@ function createEmpty(): EditorState {
     fecha_examen: '',
     fecha_proximo_control: '',
     notas: '',
+    descripcion: '',
+    medico_solicitante: '',
+    rif: '',
+    interpretacion: '',
+    observaciones: '',
     analitos: [],
     file: null,
     hasFile: false,
   };
 }
 
-export default function LabExamsSection({ patientId }: { patientId: string }) {
+export default function LabExamsSection({ patientId, patientNombre, patientEspecie, patientRaza, patientEdad }: {
+  patientId: string;
+  patientNombre?: string;
+  patientEspecie?: string;
+  patientRaza?: string;
+  patientEdad?: string;
+}) {
   const { exams, loading, refetch } = useLaboratoryExams(patientId);
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
@@ -89,7 +111,17 @@ export default function LabExamsSection({ patientId }: { patientId: string }) {
 
       const res = await fetch('/api/exams/parse', { method: 'POST', headers: appPinHeader(), body: formData });
       const json = (await res.json()) as
-        | { nombre_examen: string; laboratorio_origen: string | null; fecha_examen: string | null; analitos: LabAnalyte[] }
+        | {
+            nombre_examen: string;
+            laboratorio_origen: string | null;
+            fecha_examen: string | null;
+            descripcion: string | null;
+            medico_solicitante: string | null;
+            rif: string | null;
+            interpretacion: string | null;
+            observaciones: string | null;
+            analitos: LabAnalyte[];
+          }
         | { error: string };
 
       if (!res.ok || 'error' in json) {
@@ -102,6 +134,11 @@ export default function LabExamsSection({ patientId }: { patientId: string }) {
         nombre_examen: prev.nombre_examen || json.nombre_examen,
         laboratorio_origen: prev.laboratorio_origen || (json.laboratorio_origen ?? ''),
         fecha_examen: prev.fecha_examen || (json.fecha_examen ?? ''),
+        descripcion: prev.descripcion || (json.descripcion ?? ''),
+        medico_solicitante: prev.medico_solicitante || (json.medico_solicitante ?? ''),
+        rif: prev.rif || (json.rif ?? ''),
+        interpretacion: prev.interpretacion || (json.interpretacion ?? ''),
+        observaciones: prev.observaciones || (json.observaciones ?? ''),
         analitos: json.analitos.length > 0 ? json.analitos : prev.analitos,
       } : prev);
 
@@ -142,7 +179,7 @@ export default function LabExamsSection({ patientId }: { patientId: string }) {
   const handleFile = (f: File | null) => {
     if (!f) return;
     const okType = ALLOWED_IMAGE_TYPES.includes(f.type) || ALLOWED_DOC_TYPES.includes(f.type);
-    if (!okType) { toast('Solo PDF o imágenes (JPG/PNG/WebP)', 'error'); return; }
+    if (!okType) { toast('Solo PDF o imágenes (JPG/PNG/WebP/BMP)', 'error'); return; }
     if (f.size > MAX_DOCUMENT_SIZE) { toast('El archivo supera los 10 MB', 'error'); return; }
     setEditor(prev => prev ? { ...prev, file: f } : prev);
   };
@@ -162,6 +199,11 @@ export default function LabExamsSection({ patientId }: { patientId: string }) {
       fecha_examen: editor.fecha_examen || undefined,
       fecha_proximo_control: editor.fecha_proximo_control || undefined,
       notas: editor.notas.trim() || undefined,
+      descripcion: editor.descripcion.trim() || undefined,
+      medico_solicitante: editor.medico_solicitante.trim() || undefined,
+      rif: editor.rif.trim() || undefined,
+      interpretacion: editor.interpretacion.trim() || undefined,
+      observaciones: editor.observaciones.trim() || undefined,
       analitos,
     };
 
@@ -206,6 +248,30 @@ export default function LabExamsSection({ patientId }: { patientId: string }) {
     else { toast('Examen eliminado', 'success'); setToDelete(null); refetch(); }
   };
 
+  // S51: descarga el examen en el formato oficial KATDOC.
+  const downloadFormatoKatdoc = async (exam: LaboratoryExam) => {
+    try {
+      const { buildExamPdf } = await import('@/lib/examPdf');
+      const blob = await buildExamPdf(exam, {
+        paciente: patientNombre,
+        especie: patientEspecie,
+        raza: patientRaza,
+        edad: patientEdad,
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${(patientNombre ?? 'paciente').replace(/\s+/g, '-')}-${exam.nombre_examen.replace(/\s+/g, '-')}-${exam.fecha_examen ?? 'sin-fecha'}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast('PDF generado', 'success');
+    } catch {
+      toast('No se pudo generar el PDF', 'error');
+    }
+  };
+
   return (
     <div className="bg-white dark:bg-surface-800 rounded-2xl border border-surface-200 dark:border-surface-700 shadow-sm overflow-hidden">
       <div className="flex items-center justify-between px-4 py-3 border-b border-surface-100 dark:border-surface-800">
@@ -242,45 +308,60 @@ export default function LabExamsSection({ patientId }: { patientId: string }) {
                   </div>
                   <p className="text-xs text-surface-500 dark:text-surface-400 mt-0.5">
                     {exam.laboratorio_origen && `${exam.laboratorio_origen} · `}
-                    {exam.fecha_examen ? new Date(exam.fecha_examen).toLocaleDateString('es-VE') : 'Sin fecha'}
+                    {exam.fecha_examen ? formatearFechaCorta(exam.fecha_examen) : 'Sin fecha'}
                   </p>
                 </div>
                 <span className={`text-surface-300 transition-transform ${expanded === exam.id ? 'rotate-180' : ''}`}>▾</span>
               </button>
 
               {expanded === exam.id && (
-                <div className="border-t border-surface-100 dark:border-surface-800 px-3 pb-3 pt-2 space-y-2">
+                <div className="border-t border-surface-100 dark:border-surface-800 px-3 pb-3 pt-2 space-y-3">
+                  {exam.descripcion && <p className="text-xs text-surface-400 dark:text-surface-500">{exam.descripcion}</p>}
+
                   {exam.analitos.length > 0 ? (
-                    <table className="w-full text-xs">
-                      <thead>
-                        <tr className="text-surface-400 dark:text-surface-500 text-left">
-                          <th className="py-1 pr-2 font-semibold">Analito</th>
-                          <th className="py-1 pr-2 font-semibold">Valor</th>
-                          <th className="py-1 pr-2 font-semibold">Unidad</th>
-                          <th className="py-1 pr-2 font-semibold">Referencia</th>
-                          <th className="py-1 font-semibold">Flag</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {exam.analitos.map((a, i) => (
-                          <tr key={i} className="border-t border-surface-100 dark:border-surface-800">
-                            <td className="py-1.5 pr-2 font-semibold text-surface-700 dark:text-surface-200">{a.nombre}</td>
-                            <td className="py-1.5 pr-2 text-surface-700 dark:text-surface-200">{a.valor}</td>
-                            <td className="py-1.5 pr-2 text-surface-500 dark:text-surface-400">{a.unidad ?? ''}</td>
-                            <td className="py-1.5 pr-2 text-surface-500 dark:text-surface-400">{a.rango ?? ''}</td>
-                            <td className="py-1.5">
-                              {a.flag === 'ALTO' && <FlagBadge type="alto" />}
-                              {a.flag === 'BAJO' && <FlagBadge type="bajo" />}
-                              {(!a.flag || a.flag === 'N') && <span className="text-surface-300">—</span>}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                    groupAnalitos(exam.analitos).map(g => (
+                      <div key={g.nombre || '_'}>
+                        {g.nombre && (
+                          <p className="text-[11px] font-black uppercase tracking-wide text-brand-600 dark:text-brand-400 mb-1">{g.nombre}</p>
+                        )}
+                        <table className="w-full text-xs">
+                          <thead>
+                            <tr className="text-surface-400 dark:text-surface-500 text-left">
+                              <th className="py-1 pr-2 font-semibold">Analito</th>
+                              <th className="py-1 pr-2 font-semibold">Valor</th>
+                              <th className="py-1 pr-2 font-semibold">Unidad</th>
+                              <th className="py-1 pr-2 font-semibold">Referencia</th>
+                              <th className="py-1 font-semibold">Flag</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {g.items.map((a, i) => (
+                              <tr key={i} className="border-t border-surface-100 dark:border-surface-800">
+                                <td className="py-1.5 pr-2 font-semibold text-surface-700 dark:text-surface-200">{a.nombre}</td>
+                                <td className="py-1.5 pr-2 text-surface-700 dark:text-surface-200">{a.valor}</td>
+                                <td className="py-1.5 pr-2 text-surface-500 dark:text-surface-400">{a.unidad ?? ''}</td>
+                                <td className="py-1.5 pr-2 text-surface-500 dark:text-surface-400">{a.rango ?? ''}</td>
+                                <td className="py-1.5">
+                                  {a.flag === 'ALTO' && <FlagBadge type="alto" />}
+                                  {a.flag === 'BAJO' && <FlagBadge type="bajo" />}
+                                  {(!a.flag || a.flag === 'N') && <span className="text-surface-300">—</span>}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    ))
                   ) : (
                     <p className="text-xs text-surface-400 dark:text-surface-500 py-1">Sin analitos cargados.</p>
                   )}
 
+                  {exam.interpretacion && (
+                    <p className="text-xs text-surface-600 dark:text-surface-300 whitespace-pre-wrap"><span className="font-semibold">Interpretación:</span> {exam.interpretacion}</p>
+                  )}
+                  {exam.observaciones && (
+                    <p className="text-xs text-surface-600 dark:text-surface-300 whitespace-pre-wrap"><span className="font-semibold">Observaciones:</span> {exam.observaciones}</p>
+                  )}
                   {exam.notas && <p className="text-xs text-surface-500 dark:text-surface-400 whitespace-pre-wrap">{exam.notas}</p>}
 
                   <div className="flex items-center gap-2 pt-1">
@@ -290,6 +371,10 @@ export default function LabExamsSection({ patientId }: { patientId: string }) {
                         📄 Ver archivo
                       </a>
                     )}
+                    <button onClick={() => downloadFormatoKatdoc(exam)}
+                      className="inline-flex items-center gap-1 text-xs font-semibold text-brand-500 hover:underline">
+                      🖨 Formato KATDOC
+                    </button>
                     <div className="flex-1" />
                     <button onClick={() => openEdit(exam)} className="px-2.5 py-1 rounded-lg bg-surface-100 dark:bg-surface-800 hover:bg-surface-200 dark:hover:bg-surface-700 text-surface-600 dark:text-surface-300 text-xs font-semibold">✏️ Editar</button>
                     <button onClick={() => setToDelete(exam)} className="px-2.5 py-1 rounded-lg bg-red-50 hover:bg-red-100 text-red-500 text-xs font-semibold">🗑️</button>
@@ -322,6 +407,27 @@ export default function LabExamsSection({ patientId }: { patientId: string }) {
                 <Input type="date" value={editor.fecha_proximo_control} onChange={e => setField('fecha_proximo_control', e.target.value)} />
               </Field>
             </div>
+
+            {/* S51: encabezado e interpretación (opcional, para el formato KATDOC) */}
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="Descripción" className="col-span-2 sm:col-span-1">
+                <Input value={editor.descripcion} onChange={e => setField('descripcion', e.target.value)} placeholder="Ej: KATDOC CONSULTORIO VETERINARIO" />
+              </Field>
+              <Field label="Médico solicitante" className="col-span-2 sm:col-span-1">
+                <Input value={editor.medico_solicitante} onChange={e => setField('medico_solicitante', e.target.value)} placeholder="Ej: Katherine Pulvett" />
+              </Field>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="RIF" className="col-span-2 sm:col-span-1">
+                <Input value={editor.rif} onChange={e => setField('rif', e.target.value)} placeholder="Ej: V255959120" />
+              </Field>
+              <Field label="Interpretación" className="col-span-2 sm:col-span-1">
+                <Input value={editor.interpretacion} onChange={e => setField('interpretacion', e.target.value)} placeholder="Ej: Normocitos normocrómicos" />
+              </Field>
+            </div>
+            <Field label="Observaciones">
+              <Textarea rows={2} value={editor.observaciones} onChange={e => setField('observaciones', e.target.value)} placeholder="Notas al pie, ej: Descarte de hemoparásitos..." />
+            </Field>
 
             {/* Archivo */}
             <Field label="Archivo (PDF o foto)">
@@ -430,4 +536,16 @@ function FlagBadge({ type }: { type: 'alto' | 'bajo' }) {
       {type === 'alto' ? 'ALTO' : 'BAJO'}
     </span>
   );
+}
+
+/** S51: agrupa los analitos por sección conservando el orden de aparición. */
+function groupAnalitos(analitos: LabAnalyte[]): { nombre: string; items: LabAnalyte[] }[] {
+  const grupos: { nombre: string; items: LabAnalyte[] }[] = [];
+  for (const a of analitos) {
+    const nombre = a.grupo ?? '';
+    let g = grupos.find(x => x.nombre === nombre);
+    if (!g) { g = { nombre, items: [] }; grupos.push(g); }
+    g.items.push(a);
+  }
+  return grupos;
 }

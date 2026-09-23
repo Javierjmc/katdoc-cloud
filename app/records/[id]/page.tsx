@@ -7,6 +7,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useMedicalRecord, deleteMedicalRecord } from '@/hooks/useMedicalRecords';
 import { useAuthGuard } from '@/hooks/useAuthGuard';
+import { formatearFecha } from '@/lib/utils';
 import { PageLoader, EmptyState, Card } from '@/components/ui/Badge';
 import { ImageLightbox } from '@/components/ui';
 import { Button } from '@/components/ui/Button';
@@ -64,7 +65,7 @@ export default function RecordDetailPage() {
             <h1 className="text-lg font-black text-surface-800 dark:text-white">{record.numero_historia ?? 'Historia Clínica'}</h1>
             <p className="text-xs text-surface-400 dark:text-surface-500">
               {record.fecha_consulta
-                ? new Date(record.fecha_consulta).toLocaleDateString('es-VE', {
+                ? formatearFecha(record.fecha_consulta, {
                     day: 'numeric', month: 'long', year: 'numeric',
                   })
                 : undefined}

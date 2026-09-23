@@ -4,6 +4,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { supabase } from '@/lib/supabase';
 import AppShell from '@/components/AppShell';
+import { formatearFechaCorta } from '@/lib/utils';
 import type { DashboardRow } from '@/types';
 import { ESPECIES } from '@/types';
 import { useDebounce } from '@/hooks/useDebounce';
@@ -221,7 +222,7 @@ function PatientCard({ row }: { row: DashboardRow }) {
           {row.numero_historia && (
             <p className="text-xs text-surface-400 dark:text-surface-500 mt-0.5">
               📋 {row.numero_historia}
-              {row.fecha_consulta && <span> · {new Date(row.fecha_consulta).toLocaleDateString('es-VE')}</span>}
+              {row.fecha_consulta && <span> · {formatearFechaCorta(row.fecha_consulta)}</span>}
             </p>
           )}
         </div>

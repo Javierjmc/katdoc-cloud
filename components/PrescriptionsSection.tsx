@@ -20,7 +20,7 @@ import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { Field, Input, Textarea } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { EmptyState } from '@/components/ui/Badge';
-import { normalizePhoneForWhatsApp } from '@/lib/utils';
+import { normalizePhoneForWhatsApp, formatearFechaCorta, hoyLocal } from '@/lib/utils';
 import { appPinHeader } from '@/lib/api-auth';
 import type { Prescription, PrescriptionMedication } from '@/types';
 
@@ -31,6 +31,8 @@ type EditorState = {
   fecha: string;
   medicamentos: PrescriptionMedication[];
   notas: string;
+  /** S50: peso (kg) con el que se emite la recipe. */
+  peso: string;
 };
 
 const EMPTY_MED: PrescriptionMedication = { nombre: '', presentacion: '', dosis: '', frecuencia: '', duracion: '', via: '', indicaciones: '' };
@@ -43,6 +45,7 @@ function fromPrescription(p: Prescription): EditorState {
     fecha: p.fecha ?? '',
     medicamentos: p.medicamentos ?? [],
     notas: p.notas ?? '',
+    peso: p.peso != null ? String(p.peso) : '',
   };
 }
 
@@ -50,15 +53,19 @@ function createEmpty(): EditorState {
   return {
     mode: 'create',
     titulo: 'Recipe',
-    fecha: new Date().toISOString().split('T')[0],
+    fecha: hoyLocal(),
     medicamentos: [],
     notas: '',
+    peso: '',
   };
 }
 
-export default function PrescriptionsSection({ patientId, patientNombre, tutorTelefono, tutorEmail }: {
+export default function PrescriptionsSection({ patientId, patientNombre, tutorNombre, patientRaza, patientEdad, tutorTelefono, tutorEmail }: {
   patientId: string;
   patientNombre?: string;
+  tutorNombre?: string;
+  patientRaza?: string;
+  patientEdad?: string;
   tutorTelefono?: string | null;
   tutorEmail?: string | null;
 }) {
@@ -75,8 +82,9 @@ export default function PrescriptionsSection({ patientId, patientNombre, tutorTe
 
   const lastRecord = records && records.length > 0 ? records[0] : null;
   const pesoActual = lastRecord?.peso != null ? lastRecord.peso : null;
+  const pesoRecipe = (p: Prescription) => (p.peso != null ? p.peso : pesoActual);
 
-  const openCreate = () => setEditor(createEmpty());
+  const openCreate = () => setEditor({ ...createEmpty(), peso: pesoActual != null ? String(pesoActual) : '' });
   const openEdit = (p: Prescription) => setEditor(fromPrescription(p));
 
   const setField = (key: keyof Omit<EditorState, 'medicamentos' | 'mode' | 'id'>, value: string) => {
@@ -108,12 +116,14 @@ export default function PrescriptionsSection({ patientId, patientNombre, tutorTe
     if (medicamentos.length === 0) { toast('Agrega al menos un medicamento', 'error'); return; }
     setSaving(true);
 
+    const pesoNum = editor.peso.trim() !== '' && !Number.isNaN(parseFloat(editor.peso)) ? parseFloat(editor.peso) : undefined;
     const payload: PrescriptionInput = {
       patient_id: patientId,
       titulo: editor.titulo.trim() || 'Recipe',
       fecha: editor.fecha || undefined,
       medicamentos,
       notas: editor.notas.trim() || undefined,
+      peso: pesoNum,
     };
 
     if (editor.mode === 'create') {
@@ -141,7 +151,7 @@ export default function PrescriptionsSection({ patientId, patientNombre, tutorTe
   const downloadPDF = async (p: Prescription) => {
     try {
       const { buildRecipePdf } = await import('@/lib/recipePdf');
-      const blob = await buildRecipePdf(p, { paciente: patientNombre, peso: pesoActual });
+      const blob = await buildRecipePdf(p, { paciente: patientNombre, propietario: tutorNombre, raza: patientRaza, edad: patientEdad, peso: pesoRecipe(p) });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       const nombre = `${(patientNombre ?? 'paciente').replace(/\s+/g, '-')}-recipe-${p.fecha ?? 'sin-fecha'}.pdf`;
@@ -163,9 +173,9 @@ export default function PrescriptionsSection({ patientId, patientNombre, tutorTe
     setBusyId(p.id);
     try {
       const { buildRecipePdf, blobToBase64 } = await import('@/lib/recipePdf');
-      const blob = await buildRecipePdf(p, { paciente: patientNombre, peso: pesoActual });
+      const blob = await buildRecipePdf(p, { paciente: patientNombre, propietario: tutorNombre, raza: patientRaza, edad: patientEdad, peso: pesoRecipe(p) });
       const dataBase64 = await blobToBase64(blob);
-      const bodyText = formatMessage(p, patientNombre, pesoActual);
+      const bodyText = formatMessage(p, patientNombre, pesoRecipe(p));
       const res = await fetch('/api/notifications/email', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...appPinHeader() },
@@ -195,7 +205,7 @@ export default function PrescriptionsSection({ patientId, patientNombre, tutorTe
   const sendWhatsApp = (p: Prescription) => {
     const phone = normalizePhoneForWhatsApp(tutorTelefono);
     if (!phone) { toast('El tutor no tiene un teléfono válido para WhatsApp', 'error'); return; }
-    const url = `https://wa.me/${phone}?text=${encodeURIComponent(formatMessage(p, patientNombre, pesoActual))}`;
+    const url = `https://wa.me/${phone}?text=${encodeURIComponent(formatMessage(p, patientNombre, pesoRecipe(p)))}`;
     window.open(url, '_blank');
   };
 
@@ -224,9 +234,9 @@ export default function PrescriptionsSection({ patientId, patientNombre, tutorTe
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
                   <p className="font-bold text-sm text-surface-800 dark:text-white">{p.titulo ?? 'Recipe'}</p>
-                  <p className="text-xs text-surface-500 dark:text-surface-400">{p.fecha ? new Date(p.fecha).toLocaleDateString('es-VE') : 'Sin fecha'} · {p.medicamentos.length} medicamento{p.medicamentos.length !== 1 ? 's' : ''}</p>
-                  {pesoActual != null && (
-                    <p className="text-xs text-surface-400 dark:text-surface-500">⚖️ Peso: {pesoActual} kg</p>
+                  <p className="text-xs text-surface-500 dark:text-surface-400">{p.fecha ? formatearFechaCorta(p.fecha) : 'Sin fecha'} · {p.medicamentos.length} medicamento{p.medicamentos.length !== 1 ? 's' : ''}</p>
+                  {pesoRecipe(p) != null && (
+                    <p className="text-xs text-surface-400 dark:text-surface-500">⚖️ Peso: {pesoRecipe(p)} kg</p>
                   )}
                 </div>
                 <div className="flex gap-1 shrink-0">
@@ -256,6 +266,10 @@ export default function PrescriptionsSection({ patientId, patientNombre, tutorTe
               </Field>
               <Field label="Fecha">
                 <Input type="date" value={editor.fecha} onChange={e => setField('fecha', e.target.value)} />
+              </Field>
+              <Field label="Peso (kg)" hint="Se usa en el PDF (por defecto, el de la última consulta)">
+                <Input type="number" step="0.1" inputMode="decimal" value={editor.peso}
+                  onChange={e => setField('peso', e.target.value)} placeholder="Ej: 8.5" />
               </Field>
             </div>
 
@@ -334,8 +348,11 @@ export default function PrescriptionsSection({ patientId, patientNombre, tutorTe
               <div className="text-center border-b border-surface-200 dark:border-surface-700 pb-3 mb-3">
                 <p className="font-black text-lg">🐾 KATDOC</p>
                 <p className="text-xs text-surface-500 dark:text-surface-400">Recipe {patientNombre ? `— ${patientNombre}` : ''}</p>
-                {pesoActual != null && <p className="text-xs text-surface-500 dark:text-surface-400">⚖️ Peso: {pesoActual} kg</p>}
-                <p className="text-xs text-surface-500 dark:text-surface-400">{printTarget.fecha ? new Date(printTarget.fecha).toLocaleDateString('es-VE') : ''}</p>
+                {(patientRaza || patientEdad) && (
+                  <p className="text-xs text-surface-500 dark:text-surface-400">{[patientRaza, patientEdad].filter(Boolean).join(' · ')}</p>
+                )}
+                {pesoRecipe(printTarget) != null && <p className="text-xs text-surface-500 dark:text-surface-400">⚖️ Peso: {pesoRecipe(printTarget)} kg</p>}
+                <p className="text-xs text-surface-500 dark:text-surface-400">{printTarget.fecha ? formatearFechaCorta(printTarget.fecha) : ''}</p>
               </div>
               {printTarget.medicamentos.map((m, i) => (
                 <div key={i} className="mb-3">
@@ -365,7 +382,7 @@ function formatMessage(p: Prescription, patientNombre?: string, peso?: number | 
   const lines: string[] = [
     '📋 RECIPE',
     `🐾 ${patientNombre ?? 'Paciente'}`,
-    `📅 ${p.fecha ? new Date(p.fecha).toLocaleDateString('es-VE') : ''}`,
+    `📅 ${p.fecha ? formatearFechaCorta(p.fecha) : ''}`,
   ];
   if (peso != null) lines.push(`⚖️ Peso: ${peso} kg`);
   lines.push('');

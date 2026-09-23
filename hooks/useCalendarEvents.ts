@@ -16,13 +16,25 @@ export type CalendarEvent = {
   estado?: string;
   patientId: string;
   patientNombre: string;
+  // S48: datos del propietario para el recordatorio por WhatsApp.
+  tutorNombre?: string;
+  tutorTelefono?: string;
 };
 
-type MaybePatient = { id: string; nombre: string } | { id: string; nombre: string }[] | null;
+type TutorRel = { nombre?: string; telefono?: string | null };
+type MaybeTutor = TutorRel | TutorRel[] | null;
 
-function asPatient(p: MaybePatient): { id: string; nombre: string } | null {
+type PatientRel = { id: string; nombre: string; tutor?: MaybeTutor };
+type MaybePatient = PatientRel | PatientRel[] | null;
+
+function asPatient(p: MaybePatient): PatientRel | null {
   if (Array.isArray(p)) return p[0] ?? null;
   return p;
+}
+
+function firstTutor(t: MaybeTutor | undefined): TutorRel | null {
+  if (Array.isArray(t)) return t[0] ?? null;
+  return t ?? null;
 }
 
 type ApptRow = {
@@ -32,7 +44,10 @@ type ApptRow = {
   motivo?: string | null;
   estado: string;
   nombre_paciente?: string | null;
+  tutor_nombre?: string | null;
+  telefono_tutor?: string | null;
   patient: MaybePatient;
+  tutor: MaybeTutor;
 };
 
 type VacRow = {
@@ -71,7 +86,7 @@ export function useCalendarEvents(from: string, to: string) {
     const [appt, vac, exam] = await Promise.all([
       supabase
         .from('appointments')
-        .select('id, fecha, hora, motivo, estado, nombre_paciente, patient:patients(id, nombre)')
+        .select('id, fecha, hora, motivo, estado, nombre_paciente, tutor_nombre, telefono_tutor, patient:patients(id, nombre, tutor:tutors(nombre, telefono)), tutor:tutors(id, nombre, telefono)')
         .gte('fecha', from)
         .lte('fecha', to),
       supabase
@@ -98,6 +113,7 @@ export function useCalendarEvents(from: string, to: string) {
 
     const citas: CalendarEvent[] = ((appt.data ?? []) as ApptRow[]).map(a => {
       const p = asPatient(a.patient);
+      const tutor = firstTutor(p?.tutor) ?? firstTutor(a.tutor);
       return {
         id: a.id,
         type: 'cita' as const,
@@ -107,6 +123,8 @@ export function useCalendarEvents(from: string, to: string) {
         estado: a.estado,
         patientId: p?.id ?? '',
         patientNombre: p?.nombre ?? a.nombre_paciente ?? 'Paciente sin ficha',
+        tutorNombre: tutor?.nombre ?? a.tutor_nombre ?? undefined,
+        tutorTelefono: tutor?.telefono ?? a.telefono_tutor ?? undefined,
       };
     });
 

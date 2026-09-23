@@ -11,6 +11,7 @@ import { useReminders, updateReminderEstado, runScanNow } from '@/hooks/useRemin
 import { useNotificationLog } from '@/hooks/useNotificationLog';
 import { useAuthGuard } from '@/hooks/useAuthGuard';
 import { buildWhatsAppLink, buildMensajeRecordatorio, buildEmailRecordatorio } from '@/lib/notifications/messages';
+import { formatearFechaCorta } from '@/lib/utils';
 import { logNotification } from '@/lib/notifications/log';
 import { appPinHeader } from '@/lib/api-auth';
 import type { Reminder } from '@/types';
@@ -253,7 +254,7 @@ function ReminderCard({ r, busy, onWhatsApp, onEmail, onMarcar, onSinRespuesta, 
             🐾 {r.patient?.nombre} · 👤 {r.tutor?.nombre}
           </p>
           <p className="text-xs text-surface-400 dark:text-surface-500">
-            📅 {new Date(r.fecha_evento).toLocaleDateString('es-VE')}
+            📅 {formatearFechaCorta(r.fecha_evento)}
             {r.descripcion && <span className="block">{r.descripcion}</span>}
           </p>
         </div>
@@ -317,7 +318,7 @@ function SeguimientoCard({ r, busy, onWhatsApp, onEmail, onMarcar, onVolver, onD
             🐾 {r.patient?.nombre} · 👤 {r.tutor?.nombre}
           </p>
           <p className="text-xs text-surface-400 dark:text-surface-500">
-            📅 {new Date(r.fecha_evento).toLocaleDateString('es-VE')}
+            📅 {formatearFechaCorta(r.fecha_evento)}
             {r.descripcion && <span className="block">{r.descripcion}</span>}
           </p>
         </div>

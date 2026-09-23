@@ -72,6 +72,20 @@ function addMonthsClamped(date: Date, delta: number): Date {
 }
 
 /**
+ * S46: interpreta una fecha de forma local.
+ * Las columnas DATE llegan como "YYYY-MM-DD"; `new Date("YYYY-MM-DD")` las
+ * interpreta como medianoche UTC y en zonas negativas (VE, UTC-4) se ven el
+ * día anterior. A las fechas puras se les agrega mediodía local.
+ * Los timestamps ISO completos se parsean tal cual.
+ */
+export function parseFechaLocal(value: string | null | undefined): Date | null {
+  if (!value) return null;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return new Date(`${value}T12:00:00`);
+  const d = new Date(value);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
+/**
  * Formatea una fecha ISO a formato local venezolano/español.
  * Ej: "15 de enero de 2025"
  */
@@ -79,8 +93,9 @@ export function formatearFecha(
   fecha: string | null | undefined,
   options?: Intl.DateTimeFormatOptions
 ): string {
-  if (!fecha) return '—';
-  return new Date(fecha).toLocaleDateString('es-VE', {
+  const d = parseFechaLocal(fecha);
+  if (!d) return '—';
+  return d.toLocaleDateString('es-VE', {
     day:   'numeric',
     month: 'long',
     year:  'numeric',
@@ -92,8 +107,9 @@ export function formatearFecha(
  * Formatea fecha corta: "15/01/2025"
  */
 export function formatearFechaCorta(fecha: string | null | undefined): string {
-  if (!fecha) return '—';
-  return new Date(fecha).toLocaleDateString('es-VE');
+  const d = parseFechaLocal(fecha);
+  if (!d) return '—';
+  return d.toLocaleDateString('es-VE');
 }
 
 /**
