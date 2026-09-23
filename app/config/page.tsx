@@ -15,11 +15,13 @@ import {
   createNotificationConfig,
   deleteNotificationConfig,
 } from '@/hooks/useNotificationConfig';
+import { useAuthGuard } from '@/hooks/useAuthGuard';
 import type { NotificationConfig } from '@/types';
 
 export default function ConfigPage() {
   const { configs, loading, refetch } = useNotificationConfig();
   const { toast } = useToast();
+  const { ready } = useAuthGuard();
   const [savingId, setSavingId] = useState<string | null>(null);
   const [showNew, setShowNew] = useState(false);
   const [newTipo, setNewTipo] = useState(NOTIFICATION_TYPES[0].tipo);
@@ -52,7 +54,7 @@ export default function ConfigPage() {
     else { toast('Configuración eliminada', 'success'); setToDelete(null); refetch(); }
   };
 
-  if (loading) return <PageLoader />;
+  if (!ready || loading) return <PageLoader />;
 
   return (
     <AppShell>

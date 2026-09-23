@@ -2,6 +2,7 @@
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { usePatient } from '@/hooks/usePatients';
+import { useAuthGuard } from '@/hooks/useAuthGuard';
 import AppShell from '@/components/AppShell';
 import { PageLoader } from '@/components/ui/Badge';
 import PatientForm from '@/components/PatientForm';
@@ -10,8 +11,9 @@ export default function EditPatientPage() {
   const { id } = useParams<{ id: string }>();
   const router  = useRouter();
   const { patient, loading } = usePatient(id);
+  const { ready } = useAuthGuard();
 
-  if (loading) return <PageLoader />;
+  if (!ready || loading) return <PageLoader />;
 
   return (
     <AppShell>

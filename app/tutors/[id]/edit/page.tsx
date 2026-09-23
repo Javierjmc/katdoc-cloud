@@ -9,11 +9,13 @@ import { PageLoader } from '@/components/ui/Badge';
 import { Field, Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { ErrorMessage, SuccessMessage } from '@/components/ui/Badge';
+import { useAuthGuard } from '@/hooks/useAuthGuard';
 import type { Tutor } from '@/types';
 
 export default function EditTutorPage() {
   const { id } = useParams<{ id: string }>();
   const router  = useRouter();
+  const { ready } = useAuthGuard();
 
   const [tutor, setTutor]     = useState<Partial<Tutor>>({});
   const [loading, setLoading] = useState(true);
@@ -41,7 +43,7 @@ export default function EditTutorPage() {
     setSaving(false);
   };
 
-  if (loading) return <PageLoader />;
+  if (!ready || loading) return <PageLoader />;
 
   return (
     <AppShell>

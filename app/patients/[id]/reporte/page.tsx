@@ -14,6 +14,7 @@ import { useVaccinations } from '@/hooks/useVaccinations';
 import { useLaboratoryExams } from '@/hooks/useLaboratoryExams';
 import { usePrescriptions } from '@/hooks/usePrescriptions';
 import { useEcografias } from '@/hooks/useEcografias';
+import { useAuthGuard } from '@/hooks/useAuthGuard';
 import { SISTEMAS_CONFIG } from '@/types';
 import { calcularEdad, formatearFecha, emojiEspecie } from '@/lib/utils';
 
@@ -46,8 +47,9 @@ export default function ReportePage() {
   const [titulo, setTitulo] = useState('Informe clínico');
 
   const loading = pLoading || rLoading || vLoading || eLoading || prLoading || ecLoading;
+  const { ready } = useAuthGuard();
 
-  if (loading) return <PageLoader />;
+  if (!ready || loading) return <PageLoader />;
   if (!patient) return (
     <AppShell>
       <div className="p-8 text-center text-surface-500 dark:text-surface-400">Paciente no encontrado</div>

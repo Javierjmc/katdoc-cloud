@@ -1,10 +1,12 @@
 'use client';
 // components/MedicalRecordForm.tsx
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import Link from 'next/link';
-import { supabase, uploadMedicalDocument } from '@/lib/supabase';
+import { supabase, uploadRecordAttachment } from '@/lib/supabase';
 import { useToast } from '@/components/ui/Toast';
+import { ImageLightbox } from '@/components/ui';
+import { ALLOWED_ATTACHMENT_TYPES, MAX_DOCUMENT_SIZE } from '@/lib/constants';
 import { hoyLocal, fechaInputToISO, isoToFechaInput } from '@/lib/utils';
 import {
   SISTEMAS_CONFIG,
@@ -16,6 +18,7 @@ import {
   MUCOSAS_OPTIONS,
   MUCOSAS_DEFAULT,
   type MedicalRecord,
+  type RecordAttachment,
   type SistemaStatus,
   type SistemasStatusMap,
 } from '@/types';
@@ -73,7 +76,11 @@ export default function MedicalRecordForm({
     return initial;
   });
 
-  const [pdfFile, setPdfFile]   = useState<File | null>(null);
+  const [pending, setPending] = useState<{ file: File; preview: string | null }[]>([]);
+  const [removed, setRemoved] = useState<string[]>([]);
+  const [lightbox, setLightbox] = useState<string | null>(null);
+  const previewsRef = useRef<string[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [saving, setSaving]     = useState(false);
   const [saved, setSaved]       = useState(false);
   const [error, setError]       = useState('');
@@ -101,6 +108,51 @@ export default function MedicalRecordForm({
     }));
     setSaved(false);
   }, []);
+
+  // S44: adjuntos — selección múltiple de fotos y documentos.
+  const handleFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files ?? []);
+    e.target.value = '';
+    const accepted: { file: File; preview: string | null }[] = [];
+    for (const f of files) {
+      if (!ALLOWED_ATTACHMENT_TYPES.includes(f.type)) {
+        toast('Solo fotos (JPG/PNG/WebP) o PDF', 'error');
+        continue;
+      }
+      if (f.size > MAX_DOCUMENT_SIZE) {
+        toast(`"${f.name}" supera los 10 MB`, 'error');
+        continue;
+      }
+      const preview = f.type.startsWith('image/') ? URL.createObjectURL(f) : null;
+      if (preview) previewsRef.current.push(preview);
+      accepted.push({ file: f, preview });
+    }
+    if (accepted.length > 0) {
+      setPending(prev => [...prev, ...accepted]);
+      setSaved(false);
+    }
+  };
+
+  const removePending = (index: number) => {
+    setPending(prev => {
+      const item = prev[index];
+      if (item?.preview) {
+        URL.revokeObjectURL(item.preview);
+        previewsRef.current = previewsRef.current.filter(u => u !== item.preview);
+      }
+      return prev.filter((_, i) => i !== index);
+    });
+    setSaved(false);
+  };
+
+  const removePersisted = (url: string) => {
+    setRemoved(prev => [...prev, url]);
+    setSaved(false);
+  };
+
+  useEffect(() => () => { previewsRef.current.forEach(URL.revokeObjectURL); }, []);
+
+  const persistedAttachments = (form.attachments ?? []).filter(a => !removed.includes(a.url));
 
   const handleSave = async () => {
     setSaving(true);
@@ -187,18 +239,30 @@ export default function MedicalRecordForm({
         savedData = data as MedicalRecord;
       }
 
-      // Subir PDF después de tener el ID
-      if (pdfFile && savedData.id) {
-        const url = await uploadMedicalDocument(pdfFile, savedData.id);
-        if (url) {
-          await supabase
-            .from('medical_records')
-            .update({ document_url: url })
-            .eq('id', savedData.id);
-          savedData.document_url = url;
-          toast('Documento adjuntado', 'success');
+      // S44: subir los adjuntos y persistir el array final. Se hace en un
+      // update aparte para no depender de la columna `attachments` al guardar
+      // el resto de la historia (y no romper si aún no está migrada).
+      if (savedData.id && (pending.length > 0 || removed.length > 0)) {
+        const uploaded: RecordAttachment[] = [];
+        let failed = 0;
+        for (let i = 0; i < pending.length; i++) {
+          const res = await uploadRecordAttachment(pending[i].file, savedData.id, i);
+          if (res) uploaded.push({ ...res, size: pending[i].file.size });
+          else failed += 1;
+        }
+        const finalAttachments = [...persistedAttachments, ...uploaded];
+        const { error: attErr } = await supabase
+          .from('medical_records')
+          .update({ attachments: finalAttachments })
+          .eq('id', savedData.id);
+        if (attErr) {
+          toast(`La historia se guardó, pero los adjuntos no: ${attErr.message}`, 'error');
         } else {
-          toast('La historia se guardó, pero el PDF no se pudo subir.', 'error');
+          savedData.attachments = finalAttachments;
+          if (uploaded.length > 0) {
+            toast(`${uploaded.length} adjunto${uploaded.length !== 1 ? 's' : ''} cargado${uploaded.length !== 1 ? 's' : ''}`, 'success');
+          }
+          if (failed > 0) toast(`${failed} adjunto(s) no se pudieron subir`, 'error');
         }
       }
 
@@ -410,24 +474,74 @@ export default function MedicalRecordForm({
       </Section>
 
       <Section title="📎 Documentos Adjuntos">
-        <Field label="Subir Reporte PDF">
-          <div className="border-2 border-dashed border-surface-300 dark:border-surface-700 rounded-xl p-4 text-center hover:border-brand-400 transition-colors">
-            <input type="file" accept=".pdf" onChange={e => setPdfFile(e.target.files?.[0] ?? null)} className="hidden" id="pdf-upload" />
-            <label htmlFor="pdf-upload" className="cursor-pointer">
-              <div className="text-2xl mb-1">📄</div>
-              <p className="text-sm text-surface-600 dark:text-surface-300">
-                {pdfFile ? pdfFile.name : 'Toca para seleccionar un PDF'}
-              </p>
-              <p className="text-xs text-surface-400 mt-1">Máximo 10 MB</p>
-            </label>
-          </div>
-        </Field>
+        <p className="text-xs text-surface-500 dark:text-surface-400 mb-3">
+          Fotos (JPG/PNG/WebP) y documentos (PDF). Máximo 10 MB cada uno.
+        </p>
+
+        <input
+          ref={fileInputRef}
+          type="file"
+          multiple
+          accept="image/jpeg,image/png,image/webp,application/pdf"
+          onChange={handleFiles}
+          className="hidden"
+        />
+        <button
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
+          className="w-full border-2 border-dashed border-surface-300 dark:border-surface-700 rounded-xl p-4 text-center hover:border-brand-400 transition-colors"
+        >
+          <div className="text-2xl mb-1">📎</div>
+          <p className="text-sm text-surface-600 dark:text-surface-300">Toca para agregar fotos o documentos</p>
+        </button>
+
+        {persistedAttachments.length > 0 && (
+          <ul className="mt-3 space-y-2">
+            {persistedAttachments.map(a => (
+              <li key={a.url} className="flex items-center gap-3 rounded-xl border border-surface-200 dark:border-surface-700 p-2">
+                {a.tipo?.startsWith('image/') ? (
+                  <button type="button" onClick={() => setLightbox(a.url)} className="w-12 h-12 rounded-lg overflow-hidden bg-surface-100 dark:bg-surface-800 shrink-0">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={a.url} alt={a.nombre} className="w-full h-full object-cover" />
+                  </button>
+                ) : (
+                  <span className="w-12 h-12 rounded-lg bg-surface-100 dark:bg-surface-800 flex items-center justify-center text-xl shrink-0">📄</span>
+                )}
+                <a href={a.url} target="_blank" rel="noreferrer" className="flex-1 text-sm text-brand-600 dark:text-brand-400 hover:underline truncate">{a.nombre}</a>
+                <button type="button" onClick={() => removePersisted(a.url)} className="text-xs text-red-500 hover:underline shrink-0">Quitar</button>
+              </li>
+            ))}
+          </ul>
+        )}
+
+        {pending.length > 0 && (
+          <ul className="mt-3 space-y-2">
+            {pending.map((p, i) => (
+              <li key={`${p.file.name}-${i}`} className="flex items-center gap-3 rounded-xl border border-dashed border-brand-300 dark:border-brand-800 p-2">
+                {p.preview ? (
+                  <button type="button" onClick={() => setLightbox(p.preview)} className="w-12 h-12 rounded-lg overflow-hidden bg-surface-100 dark:bg-surface-800 shrink-0">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={p.preview} alt={p.file.name} className="w-full h-full object-cover" />
+                  </button>
+                ) : (
+                  <span className="w-12 h-12 rounded-lg bg-surface-100 dark:bg-surface-800 flex items-center justify-center text-xl shrink-0">📄</span>
+                )}
+                <span className="flex-1 text-sm text-surface-600 dark:text-surface-300 truncate">{p.file.name}</span>
+                <span className="text-[10px] text-surface-400 shrink-0">pendiente</span>
+                <button type="button" onClick={() => removePending(i)} className="text-xs text-red-500 hover:underline shrink-0">Quitar</button>
+              </li>
+            ))}
+          </ul>
+        )}
+
         {form.document_url && (
-          <a href={form.document_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 text-sm text-brand-600 dark:text-brand-400 hover:underline mt-2">
-            📄 Ver documento actual
+          <a href={form.document_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 text-sm text-brand-600 dark:text-brand-400 hover:underline mt-3">
+            📄 Ver documento anterior
           </a>
         )}
       </Section>
+
+      <ImageLightbox src={lightbox} alt="Adjunto" onClose={() => setLightbox(null)} />
 
       {/* Footer fijo */}
       <div className="fixed bottom-0 left-0 right-0 z-40 bg-white dark:bg-surface-900 border-t border-surface-200 dark:border-surface-800 px-4 py-3 md:left-16 lg:left-64">

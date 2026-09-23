@@ -9,6 +9,7 @@ import { useToast } from '@/components/ui/Toast';
 import { PageLoader, EmptyState } from '@/components/ui/Badge';
 import { useReminders, updateReminderEstado, runScanNow } from '@/hooks/useReminders';
 import { useNotificationLog } from '@/hooks/useNotificationLog';
+import { useAuthGuard } from '@/hooks/useAuthGuard';
 import { buildWhatsAppLink, buildMensajeRecordatorio, buildEmailRecordatorio } from '@/lib/notifications/messages';
 import { logNotification } from '@/lib/notifications/log';
 import { appPinHeader } from '@/lib/api-auth';
@@ -20,6 +21,7 @@ export default function NotificationsPage() {
   const { reminders, loading, refetch } = useReminders('pendiente');
   const { reminders: seguimiento, loading: segLoading, refetch: refetchSeg } = useReminders('seguimiento');
   const { toast } = useToast();
+  const { ready } = useAuthGuard();
   const [tab, setTab] = useState<Tab>('pendientes');
   const [scanning, setScanning] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -128,7 +130,7 @@ export default function NotificationsPage() {
 
   const loadingTab = tab === 'pendientes' ? loading : segLoading;
 
-  if (loadingTab) return <PageLoader />;
+  if (!ready || loadingTab) return <PageLoader />;
 
   return (
     <AppShell>

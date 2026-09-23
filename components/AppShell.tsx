@@ -19,8 +19,13 @@ export default function AppShell({ children }: AppShellProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const pendingCount = useReminderBadge();
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     clearAuthenticated();
+    try {
+      await fetch('/api/auth', { method: 'DELETE' });
+    } catch {
+      /* sin red: el middleware igual bloqueará cuando la cookie expire */
+    }
     router.replace('/login');
   };
 

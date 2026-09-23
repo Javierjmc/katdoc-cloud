@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/Button';
 import { Field, Input, Textarea, Select } from '@/components/ui/Input';
 import { useCalendarEvents, type CalendarEvent } from '@/hooks/useCalendarEvents';
 import { usePatients } from '@/hooks/usePatients';
+import { useAuthGuard } from '@/hooks/useAuthGuard';
 import { createAppointment } from '@/hooks/useAppointments';
 import { appointmentSchema, validateSchema, type FieldErrors } from '@/lib/schemas';
 import { isPastDateTime, normalizePhoneForWhatsApp } from '@/lib/utils';
@@ -50,6 +51,7 @@ export default function AgendaPage() {
   const [selected, setSelected] = useState<string | null>(toYMD(today));
   const [dayModal, setDayModal] = useState<string | null>(null);
   const { toast } = useToast();
+  const { ready } = useAuthGuard();
 
   const from = `${year}-${String(month + 1).padStart(2, '0')}-01`;
   const to = `${year}-${String(month + 1).padStart(2, '0')}-${String(new Date(year, month + 1, 0).getDate()).padStart(2, '0')}`;
@@ -159,6 +161,8 @@ export default function AgendaPage() {
   };
 
   const todayStr = toYMD(today);
+
+  if (!ready) return <PageLoader />;
 
   return (
     <AppShell>

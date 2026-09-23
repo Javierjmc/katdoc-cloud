@@ -6,7 +6,9 @@ import { useParams, useRouter } from 'next/navigation';
 import { useState } from 'react';
 import Link from 'next/link';
 import { useMedicalRecord, deleteMedicalRecord } from '@/hooks/useMedicalRecords';
+import { useAuthGuard } from '@/hooks/useAuthGuard';
 import { PageLoader, EmptyState, Card } from '@/components/ui/Badge';
+import { ImageLightbox } from '@/components/ui';
 import { Button } from '@/components/ui/Button';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { useToast } from '@/components/ui/Toast';
@@ -22,11 +24,13 @@ export default function RecordDetailPage() {
   const { toast } = useToast();
 
   const { record, loading } = useMedicalRecord(id);
+  const { ready } = useAuthGuard();
   const [mode, setMode]     = useState<ViewMode>('view');
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [lightbox, setLightbox] = useState<string | null>(null);
 
-  if (loading) return <PageLoader />;
+  if (!ready || loading) return <PageLoader />;
 
   if (!record) {
     return (
@@ -165,7 +169,7 @@ export default function RecordDetailPage() {
               </div>
             </Card>
 
-            {/* Documento adjunto */}
+            {/* Documento adjunto (legado) */}
             {record.document_url && (
               <a
                 href={record.document_url}
@@ -181,6 +185,28 @@ export default function RecordDetailPage() {
               >
                 📄 Ver documento PDF adjunto
               </a>
+            )}
+
+            {/* Adjuntos (S44): fotos y documentos */}
+            {record.attachments && record.attachments.length > 0 && (
+              <Card>
+                <h3 className="section-title">📎 Adjuntos</h3>
+                <ul className="mt-3 space-y-2">
+                  {record.attachments.map(a => (
+                    <li key={a.url} className="flex items-center gap-3 rounded-xl border border-surface-200 dark:border-surface-700 p-2">
+                      {a.tipo?.startsWith('image/') ? (
+                        <button type="button" onClick={() => setLightbox(a.url)} className="w-14 h-14 rounded-lg overflow-hidden bg-surface-100 dark:bg-surface-800 shrink-0">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={a.url} alt={a.nombre} className="w-full h-full object-cover" />
+                        </button>
+                      ) : (
+                        <span className="w-14 h-14 rounded-lg bg-surface-100 dark:bg-surface-800 flex items-center justify-center text-2xl shrink-0">📄</span>
+                      )}
+                      <a href={a.url} target="_blank" rel="noreferrer" className="flex-1 text-sm text-brand-600 dark:text-brand-400 hover:underline truncate">{a.nombre}</a>
+                    </li>
+                  ))}
+                </ul>
+              </Card>
             )}
 
             {/* Zona de peligro */}
@@ -207,6 +233,8 @@ export default function RecordDetailPage() {
         onConfirm={handleDelete}
         onCancel={() => setConfirmDelete(false)}
       />
+
+      <ImageLightbox src={lightbox} alt="Adjunto" onClose={() => setLightbox(null)} />
 
       <style jsx global>{`
         .section-title {

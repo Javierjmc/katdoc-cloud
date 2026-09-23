@@ -5,11 +5,13 @@ import { Suspense } from 'react';
 import AppShell from '@/components/AppShell';
 import PatientForm from '@/components/PatientForm';
 import { PageLoader } from '@/components/ui/Badge';
+import { useAuthGuard } from '@/hooks/useAuthGuard';
 import Link from 'next/link';
 
 function NewPatientContent() {
   const router = useRouter();
   const params = useSearchParams();
+  const { ready } = useAuthGuard();
 
   // Pre-rellena datos del tutor si vienen por URL
   const prefillTutor = params.get('tutorId') ? {
@@ -20,6 +22,8 @@ function NewPatientContent() {
     email:     params.get('email')     ?? '',
     direccion: params.get('direccion') ?? '',
   } : undefined;
+
+  if (!ready) return <PageLoader />;
 
   return (
     <AppShell>

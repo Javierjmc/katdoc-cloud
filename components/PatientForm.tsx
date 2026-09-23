@@ -8,12 +8,13 @@ import { useState, useEffect, useRef } from 'react';
 import { supabase, uploadPetPhoto } from '@/lib/supabase';
 import { createPatientWithTutor, updatePatient, findTutorByCedula } from '@/hooks/usePatients';
 import { ESPECIES } from '@/types';
-import { patientFormSchema, validateSchema, type FieldErrors } from '@/lib/schemas';
+import { patientFormSchema, patientFormCreateSchema, validateSchema, type FieldErrors } from '@/lib/schemas';
 import { Button } from '@/components/ui/Button';
 import { Field, Input, Select } from '@/components/ui/Input';
 import { ErrorMessage, SuccessMessage } from '@/components/ui/Badge';
 import { useToast } from '@/components/ui/Toast';
 import { ALLOWED_IMAGE_TYPES, MAX_PHOTO_SIZE } from '@/lib/constants';
+import { hoyLocal } from '@/lib/utils';
 import type { Patient, Tutor } from '@/types';
 import Image from 'next/image';
 
@@ -61,6 +62,17 @@ export default function PatientForm({ existingPatient, prefillTutor, onSuccess }
   const [error, setError]     = useState('');
   const [success, setSuccess] = useState('');
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+
+  // S42: controla el objectURL del preview para liberarlo al reemplazarlo.
+  const previewUrlRef = useRef<string | null>(existingPatient?.photo_url ?? null);
+  const updatePreview = (url: string | null) => {
+    if (previewUrlRef.current?.startsWith('blob:')) URL.revokeObjectURL(previewUrlRef.current);
+    previewUrlRef.current = url;
+    setPhotoPreview(url);
+  };
+  useEffect(() => () => {
+    if (previewUrlRef.current?.startsWith('blob:')) URL.revokeObjectURL(previewUrlRef.current);
+  }, []);
 
   // S22: sugerencias de tutores existentes.
   const [tutors, setTutors] = useState<Tutor[]>([]);
@@ -115,47 +127,33 @@ export default function PatientForm({ existingPatient, prefillTutor, onSuccess }
     if (match) applyTutorLink(match);
   };
 
-  // ── Foto: validación + preview inmediato + subida inmediata si es edición ──
-  const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  // ── Foto: validación + preview local (la subida se hace al guardar) ──
+  // S42: se unificó el flujo (crear y editar suben al guardar) para evitar
+  // estados intermedios y el doble guardado de la URL.
+  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    e.target.value = '';
     if (!file) return;
 
     if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
       toast('Solo imágenes (JPG/PNG/WebP)', 'error');
-      e.target.value = '';
       return;
     }
     if (file.size > MAX_PHOTO_SIZE) {
       toast('La foto supera los 5 MB', 'error');
-      e.target.value = '';
       return;
     }
 
-    // Preview inmediato
-    const localUrl = URL.createObjectURL(file);
-    setPhotoPreview(localUrl);
+    updatePreview(URL.createObjectURL(file));
     setPhotoFile(file);
     setPhotoUploaded(false);
-
-    // Si estamos editando, subir inmediatamente
-    if (isEditing && existingPatient?.id) {
-      setPhotoUploading(true);
-      const url = await uploadPetPhoto(file, existingPatient.id);
-      setPhotoUploading(false);
-      if (url) {
-        await updatePatient(existingPatient.id, { photo_url: url });
-        setPhotoPreview(url);
-        setP('photo_url', url);
-        setPhotoUploaded(true);
-        toast('Foto actualizada correctamente', 'success');
-      } else {
-        toast('No se pudo subir la foto. Intentá de nuevo.', 'error');
-      }
-    }
   };
 
   const validate = (): boolean => {
-    const errors = validateSchema(patientFormSchema, { tutor, patient });
+    // S41: al crear, la fecha de nacimiento es obligatoria; al editar, no se
+    // exige para no bloquear pacientes legacy sin fecha.
+    const schema = isEditing ? patientFormSchema : patientFormCreateSchema;
+    const errors = validateSchema(schema, { tutor, patient });
     if (errors) {
       setFieldErrors(errors);
       const first = Object.values(errors)[0];
@@ -174,12 +172,24 @@ export default function PatientForm({ existingPatient, prefillTutor, onSuccess }
     try {
       let patientId = existingPatient?.id ?? '';
 
-      if (isEditing) {
-        // Actualizar datos del paciente
-        let photoUrl = patient.photo_url;
-        if (photoFile && !photoUploaded && patientId) {
-          photoUrl = (await uploadPetPhoto(photoFile, patientId)) ?? photoUrl;
+      // S42: sube la foto una sola vez (mismo camino para crear y editar).
+      const uploadPhoto = async (pid: string): Promise<string | undefined> => {
+        if (!photoFile) return undefined;
+        setPhotoUploading(true);
+        const url = await uploadPetPhoto(photoFile, pid);
+        setPhotoUploading(false);
+        if (!url) {
+          toast('No se pudo subir la foto. Intentá de nuevo.', 'error');
+          return undefined;
         }
+        updatePreview(url);
+        setPhotoUploaded(true);
+        return url;
+      };
+
+      if (isEditing) {
+        // Actualizar datos del paciente (con la foto nueva si la hay)
+        const photoUrl = (await uploadPhoto(patientId)) ?? patient.photo_url;
         const { error: updErr } = await updatePatient(patientId, { ...patient, photo_url: photoUrl });
         if (updErr) throw new Error(updErr);
 
@@ -200,21 +210,19 @@ export default function PatientForm({ existingPatient, prefillTutor, onSuccess }
         }
 
         const { patientId: newId, error: createErr } = await createPatientWithTutor(
-          { tutor, patient },
+          { tutor, patient: { ...patient, photo_url: '' } },
           { tutorId: linkedTutorId ?? prefillTutor?.id }
         );
         if (createErr || !newId) throw new Error(createErr ?? 'Error desconocido');
         patientId = newId;
 
         // Subir foto si hay una
-        if (photoFile) {
-          const url = await uploadPetPhoto(photoFile, patientId);
-          if (url) {
-            await updatePatient(patientId, { photo_url: url });
-            toast('Foto subida correctamente', 'success');
-          } else {
-            toast('Paciente guardado, pero la foto no se pudo subir.', 'error');
-          }
+        const url = await uploadPhoto(patientId);
+        if (url) {
+          await updatePatient(patientId, { photo_url: url });
+          toast('Foto subida correctamente', 'success');
+        } else if (photoFile) {
+          toast('Paciente guardado, pero la foto no se pudo subir.', 'error');
         }
       }
 
@@ -267,8 +275,8 @@ export default function PatientForm({ existingPatient, prefillTutor, onSuccess }
         <input id="photo-gallery" type="file" accept="image/jpeg,image/png,image/webp"
           onChange={handlePhotoChange} className="hidden" />
 
-        {photoFile && !isEditing && (
-          <p className="text-xs text-surface-400 dark:text-surface-500">📸 {photoFile.name} — se subirá al guardar</p>
+        {photoFile && (
+          <p className="text-xs text-surface-400 dark:text-surface-500">📸 {photoFile.name} — se guardará con los cambios</p>
         )}
       </div>
 
@@ -364,8 +372,9 @@ export default function PatientForm({ existingPatient, prefillTutor, onSuccess }
             <Input value={patient.color} onChange={e => setP('color', e.target.value)} placeholder="Ej: Marrón" />
           </Field>
         </div>
-        <Field label="Fecha de nacimiento" error={fieldErrors['patient.fecha_nacimiento']}>
-          <Input type="date" value={patient.fecha_nacimiento} onChange={e => setP('fecha_nacimiento', e.target.value)} />
+        <Field label="Fecha de nacimiento" required={!isEditing} error={fieldErrors['patient.fecha_nacimiento']}>
+          <Input type="date" value={patient.fecha_nacimiento} max={hoyLocal()}
+            onChange={e => setP('fecha_nacimiento', e.target.value)} />
         </Field>
       </div>
 

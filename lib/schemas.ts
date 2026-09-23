@@ -4,6 +4,7 @@
 // Centraliza reglas por entidad y se usa en los formularios.
 // ============================================================
 import { z } from 'zod';
+import { hoyLocal } from '@/lib/utils';
 
 const optionalTrimmed = (min: number, max: number, msg: string) =>
   z.string().trim().min(min, msg).max(max);
@@ -34,6 +35,19 @@ export const patientSchema = z.object({
 export const patientFormSchema = z.object({
   tutor:   tutorSchema,
   patient: patientSchema,
+});
+
+// S41: pacientes nuevos exigen fecha de nacimiento (los existentes no).
+export const patientCreateSchema = patientSchema.extend({
+  fecha_nacimiento: z.string().trim()
+    .min(1, 'La fecha de nacimiento es obligatoria')
+    .refine(v => !Number.isNaN(Date.parse(v)), 'Fecha de nacimiento inválida')
+    .refine(v => v <= hoyLocal(), 'La fecha de nacimiento no puede ser futura'),
+});
+
+export const patientFormCreateSchema = z.object({
+  tutor:   tutorSchema,
+  patient: patientCreateSchema,
 });
 
 // ─── Cita ────────────────────────────────────────────────────

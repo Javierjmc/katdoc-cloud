@@ -20,17 +20,22 @@ export const supabase = createClient(supabaseUrl, supabaseAnon);
 /**
  * Sube una foto de mascota al bucket `pet-photos`
  * y devuelve la URL pública.
+ *
+ * S42: la URL pública del objeto es estable (`${patientId}/profile.${ext}`),
+ * por lo que al reemplazar la foto el navegador/CDN/next-image siguen sirviendo
+ * la versión cacheada. Se agrega un parámetro `?v=` con la versión para forzar
+ * el refresco sin cambiar la ruta (y sin dejar archivos huérfanos).
  */
 export async function uploadPetPhoto(
   file: File,
   patientId: string
 ): Promise<string | null> {
-  const ext      = file.name.split('.').pop();
+  const ext      = (file.name.split('.').pop() || 'jpg').toLowerCase();
   const filePath = `${patientId}/profile.${ext}`;
 
   const { error } = await supabase.storage
     .from('pet-photos')
-    .upload(filePath, file, { upsert: true });
+    .upload(filePath, file, { upsert: true, contentType: file.type || undefined });
 
   if (error) {
     console.error('Error subiendo foto:', error.message);
@@ -41,7 +46,8 @@ export async function uploadPetPhoto(
     .from('pet-photos')
     .getPublicUrl(filePath);
 
-  return data.publicUrl;
+  const url = data.publicUrl;
+  return `${url}${url.includes('?') ? '&' : '?'}v=${Date.now()}`;
 }
 
 /**
@@ -68,6 +74,35 @@ export async function uploadMedicalDocument(
     .getPublicUrl(filePath);
 
   return data.publicUrl;
+}
+
+/**
+ * S44: sube un adjunto (foto o documento) de una consulta al bucket
+ * `medical-documents` y devuelve `{ url, nombre, tipo }`.
+ * @param index Índice dentro de la consulta (para rutas únicas).
+ */
+export async function uploadRecordAttachment(
+  file: File,
+  recordId: string,
+  index: number
+): Promise<{ url: string; nombre: string; tipo: string } | null> {
+  const ext = (file.name.split('.').pop() || 'bin').toLowerCase();
+  const filePath = `${recordId}/adjunto-${index}-${Date.now()}.${ext}`;
+
+  const { error } = await supabase.storage
+    .from('medical-documents')
+    .upload(filePath, file, { upsert: true, contentType: file.type || undefined });
+
+  if (error) {
+    console.error('Error subiendo adjunto:', error.message);
+    return null;
+  }
+
+  const { data } = supabase.storage
+    .from('medical-documents')
+    .getPublicUrl(filePath);
+
+  return { url: data.publicUrl, nombre: file.name, tipo: file.type };
 }
 
 /**

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { usePatient, updatePatient } from '@/hooks/usePatients';
 import { useMedicalRecords } from '@/hooks/useMedicalRecords';
+import { useAuthGuard } from '@/hooks/useAuthGuard';
 import AppShell from '@/components/AppShell';
 import { PageLoader, EmptyState } from '@/components/ui/Badge';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
@@ -23,11 +24,12 @@ export default function PatientProfilePage() {
   const { patient, loading: pLoading, refetch } = usePatient(id);
   const { records, loading: rLoading } = useMedicalRecords(id);
   const { toast } = useToast();
+  const { ready } = useAuthGuard();
   const [confirmToggle, setConfirmToggle] = useState(false);
   const [toggling, setToggling] = useState(false);
   const [photoOpen, setPhotoOpen] = useState(false);
 
-  if (pLoading) return <PageLoader />;
+  if (!ready || pLoading) return <PageLoader />;
   if (!patient) return (
     <AppShell>
       <EmptyState icon="🔍" title="Paciente no encontrado" />

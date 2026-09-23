@@ -4,6 +4,7 @@ import { useEffect, useState, Suspense } from 'react';
 import Link from 'next/link';
 import { usePatient } from '@/hooks/usePatients';
 import { getNextNumeroHistoria } from '@/hooks/useMedicalRecords';
+import { useAuthGuard } from '@/hooks/useAuthGuard';
 import AppShell from '@/components/AppShell';
 import { PageLoader } from '@/components/ui/Badge';
 import MedicalRecordForm from '@/components/MedicalRecordForm';
@@ -13,11 +14,12 @@ function NewRecordContent() {
   const router    = useRouter();
   const patientId = params.get('patientId') ?? '';
   const { patient, loading } = usePatient(patientId);
+  const { ready } = useAuthGuard();
   const [nextNumber, setNextNumber] = useState('');
 
   useEffect(() => { getNextNumeroHistoria().then(setNextNumber); }, []);
 
-  if (loading || !nextNumber) return <PageLoader />;
+  if (!ready || loading || !nextNumber) return <PageLoader />;
 
   return (
     <AppShell>

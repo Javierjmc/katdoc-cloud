@@ -248,9 +248,19 @@ export type MedicalRecord = {
   descripcion_hallazgos?: string;
   // Adjuntos
   document_url?: string;
+  /** S44: adjuntos de la consulta (fotos y documentos). */
+  attachments?: RecordAttachment[];
   created_at: string;
   // Relación expandida
   patient?: Patient;
+};
+
+/** S44: adjunto de una consulta (foto o documento). */
+export type RecordAttachment = {
+  url: string;
+  nombre: string;
+  tipo: string; // MIME real
+  size?: number;
 };
 
 // ─── Configuración de UI ────────────────────────────────────

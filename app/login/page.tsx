@@ -1,10 +1,15 @@
 'use client';
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { isAuthenticated, setAuthenticated, migrateLegacySession, AUTH_STORAGE_KEY } from '@/lib/auth';
+import { setAuthenticated, clearAuthenticated, migrateLegacySession, AUTH_STORAGE_KEY } from '@/lib/auth';
 
 const PIN_LENGTH = 4;
-const APP_PIN    = process.env.NEXT_PUBLIC_APP_PIN ?? '0000';
+
+function nextTarget(): string {
+  if (typeof window === 'undefined') return '/dashboard';
+  const next = new URLSearchParams(window.location.search).get('next');
+  return next && next.startsWith('/') ? next : '/dashboard';
+}
 
 export default function LoginPage() {
   const router  = useRouter();
@@ -14,23 +19,50 @@ export default function LoginPage() {
 
   useEffect(() => {
     migrateLegacySession();
-    if (isAuthenticated()) router.replace('/dashboard');
+
+    // S43: la sesión real vive en una cookie httpOnly. Si es válida, entra
+    // sin pedir PIN; si el flag local quedó viejo, se limpia.
+    let active = true;
+    (async () => {
+      try {
+        const res = await fetch('/api/auth');
+        const data = res.ok ? await res.json() : null;
+        if (!active) return;
+        if (data?.authenticated) {
+          setAuthenticated();
+          router.replace(nextTarget());
+        } else {
+          clearAuthenticated();
+        }
+      } catch {
+        /* sin red: se queda en el login */
+      }
+    })();
 
     // Si se loguea en otra pestaña, esta también salta al dashboard.
     const handleStorage = (e: StorageEvent) => {
       if (e.key === AUTH_STORAGE_KEY && e.newValue === 'true') {
-        router.replace('/dashboard');
+        router.replace(nextTarget());
       }
     };
     window.addEventListener('storage', handleStorage);
-    return () => window.removeEventListener('storage', handleStorage);
+    return () => {
+      active = false;
+      window.removeEventListener('storage', handleStorage);
+    };
   }, [router]);
 
-  const validatePin = useCallback((attempt: string) => {
-    if (attempt === APP_PIN) {
+  const validatePin = useCallback(async (attempt: string) => {
+    try {
+      const res = await fetch('/api/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pin: attempt }),
+      });
+      if (!res.ok) throw new Error('PIN incorrecto');
       setAuthenticated();
-      router.push('/dashboard');
-    } else {
+      router.replace(nextTarget());
+    } catch {
       setShake(true);
       setError('PIN incorrecto');
       setTimeout(() => { setPin(''); setShake(false); setError(''); }, 800);
