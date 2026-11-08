@@ -2,6 +2,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { setAuthenticated, clearAuthenticated, migrateLegacySession, AUTH_STORAGE_KEY } from '@/lib/auth';
+import BrandMark from '@/components/BrandMark';
+import { BRAND } from '@/lib/brand';
 
 const PIN_LENGTH = 4;
 
@@ -82,15 +84,10 @@ export default function LoginPage() {
   return (
     <main className="min-h-screen flex flex-col items-center justify-center bg-surface-700 px-6 py-10">
       {/* Logo */}
-      <div className="mb-10 flex flex-col items-center gap-3">
-        <div className="w-20 h-20 rounded-3xl bg-brand-500 flex items-center justify-center shadow-2xl shadow-brand-500/40">
-          <span className="text-4xl">🐾</span>
-        </div>
+      <div className="mb-10 flex flex-col items-center gap-4">
+        <BrandMark size={96} variant="logo" />
         <div className="text-center">
-          <h1 className="text-3xl font-black tracking-tight text-white">
-            KAT<span className="text-brand-400">DOC</span>
-          </h1>
-          <p className="text-sm text-surface-300 mt-1">Bienestar animal, otra manera de amar</p>
+          <p className="text-sm text-surface-300 max-w-[240px]">{BRAND.tagline}</p>
         </div>
       </div>
 

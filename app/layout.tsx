@@ -5,13 +5,20 @@ import { ThemeProvider } from '@/components/ThemeProvider';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title:       'VetCare Pro — Historias Clínicas Veterinarias',
+  title:       'KATDOC — Historias Clínicas',
   description: 'Sistema de gestión de historias clínicas veterinarias',
   manifest:    '/manifest.json',
+  icons: {
+    icon: [
+      { url: '/icons/icon-32.png',  sizes: '32x32',   type: 'image/png' },
+      { url: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' },
+    ],
+    apple: [{ url: '/icons/apple-180.png', sizes: '180x180', type: 'image/png' }],
+  },
   appleWebApp: {
     capable:         true,
     statusBarStyle:  'default',
-    title:           'VetCare Pro',
+    title:           'KATDOC',
   },
 };
 

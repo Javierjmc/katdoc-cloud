@@ -6,6 +6,8 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
+import BrandMark from '@/components/BrandMark';
+import { BRAND } from '@/lib/brand';
 import { clearAuthenticated } from '@/lib/auth';
 import { useReminderBadge } from '@/hooks/useReminderBadge';
 
@@ -50,12 +52,10 @@ export default function AppShell({ children }: AppShellProps) {
       ">
         {/* Logo */}
         <div className="flex items-center gap-3 px-6 py-5 border-b border-surface-600">
-          <div className="w-10 h-10 rounded-xl bg-brand-500 flex items-center justify-center text-xl shadow-lg">
-            🐾
-          </div>
+          <BrandMark size={40} />
           <div>
-            <p className="font-black text-base tracking-tight text-white">KATDOC</p>
-            <p className="text-xs text-surface-300">Historias Clínicas</p>
+            <p className="font-black text-base tracking-tight text-white">{BRAND.name}</p>
+            <p className="text-xs text-surface-300">{BRAND.subtitle}</p>
           </div>
         </div>
 
@@ -94,18 +94,22 @@ export default function AppShell({ children }: AppShellProps) {
         transition-all duration-300
       `}>
         {/* Toggle + Logo */}
-        <div className={`flex items-center ${sidebarOpen ? 'gap-3 px-4' : 'justify-center px-0'} py-5 border-b border-surface-600`}>
+        <div className={`flex items-center ${sidebarOpen ? 'gap-2 px-3' : 'justify-center px-0'} py-5 border-b border-surface-600`}>
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="w-10 h-10 rounded-xl bg-brand-500 flex items-center justify-center text-xl shrink-0"
+            title={sidebarOpen ? 'Contraer menú' : 'Expandir menú'}
+            className="shrink-0"
           >
-            {sidebarOpen ? '◀' : '🐾'}
+            <BrandMark size={sidebarOpen ? 32 : 40} />
           </button>
           {sidebarOpen && (
-            <div>
-              <p className="font-black text-sm text-white">KATDOC</p>
-              <p className="text-xs text-surface-300">Historias</p>
-            </div>
+            <>
+              <div className="min-w-0">
+                <p className="font-black text-sm text-white">{BRAND.name}</p>
+                <p className="text-xs text-surface-300">Historias</p>
+              </div>
+              <span className="ml-auto text-[10px] text-surface-400">◀</span>
+            </>
           )}
         </div>
 

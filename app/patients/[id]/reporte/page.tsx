@@ -4,8 +4,10 @@
 
 import { useParams } from 'next/navigation';
 import { useState } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import AppShell from '@/components/AppShell';
+import { BRAND } from '@/lib/brand';
 import { PageLoader } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { usePatient } from '@/hooks/usePatients';
@@ -116,8 +118,15 @@ export default function ReportePage() {
           <div className="reporte-print bg-white dark:bg-surface-800 rounded-2xl border border-surface-200 dark:border-surface-700 shadow-sm p-6">
             {/* Encabezado */}
             <div className="text-center border-b-2 border-surface-300 pb-4 mb-4">
-              <p className="text-2xl font-black">🐾 KATDOC</p>
-              <p className="text-lg font-bold mt-1">{titulo}</p>
+              <Image
+                src={BRAND.logo}
+                alt={BRAND.name}
+                width={170}
+                height={144}
+                unoptimized
+                className="h-16 w-auto mx-auto"
+              />
+              <p className="text-lg font-bold mt-2">{titulo}</p>
               <p className="text-xs text-surface-500 dark:text-surface-400">Fecha de emisión: {formatearFecha(new Date().toISOString())}</p>
             </div>
 

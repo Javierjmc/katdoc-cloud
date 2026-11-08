@@ -1,10 +1,28 @@
 {
-  "name": "KATDOC",
+  "name": "KATDOC — Historias Clínicas",
   "short_name": "KATDOC",
-  "description": "Historias Clínicas Veterinarias",
+  "description": "Historias clínicas veterinarias",
   "start_url": "/dashboard",
   "display": "standalone",
   "background_color": "#2D2D2D",
   "theme_color": "#E8724A",
-  "orientation": "portrait"
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
 }
