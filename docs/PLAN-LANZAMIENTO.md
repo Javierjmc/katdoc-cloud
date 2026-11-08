@@ -8,8 +8,9 @@
 > El plan operativo vigente es **`docs/PLAN-ACCION.md`**.
 > Cambios respecto de esta versión:
 > - Nombre del producto: **Fonendo** (KATDOC queda como marca de la clínica #1).
-> - El repo, el Supabase y el Vercel del SaaS son **nuevos**. La clínica #1 no se
->   migra en el lugar: se copia a un proyecto nuevo.
+> - El repo, el Supabase y el Vercel del SaaS son **nuevos**. La clínica #1 **no se
+>   migra**: sigue en KatDoc, con su stack, indefinidamente. Fonendo nace de una copia
+>   del código en el tag `katdoc-fork-2026-11` (ver `PLAN-ACCION.md` §1 y §14).
 > - Entrada de clientes: **invitación manual**, sin autorregistro.
 > - Lanzamiento: **1 de febrero de 2027**. Gate de aislamiento: **15 de diciembre**.
 > - Criterio de aceptación del §6: ya no es "cualquiera se registra", es "yo creo la
@@ -291,8 +292,14 @@ El negocio cubre costos desde el tercer cliente. La pregunta real es si compensa
 
 ## 9. La clínica #1 (cuñada)
 
-Decisión: **se migra a la plataforma nueva y queda gratis de por vida como clínica
-fundadora.** No se mantienen dos apps (dos codebases con 15 h/semana es inviable).
+Decisión: **no se migra.** La clínica #1 se queda en KatDoc, con su Supabase y su
+Vercel, gratis de por vida como clínica fundadora. No se mantienen dos apps para
+vender: KatDoc es la línea de esa clínica y Fonendo es el SaaS, con codebases
+separados y reglas de convivencia en `PLAN-ACCION.md` §2.
+
+El protocolo de migración queda documentado en `PLAN-ACCION.md` §11 como **opcional**,
+solo si algún día mantener dos líneas cuesta más que migrar (disparador: 60 días sin
+pedidos nuevos).
 
 Protocolo de migración:
 

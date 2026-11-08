@@ -7,6 +7,12 @@
 > **`docs/PLAN-ACCION.md`**. Varias afirmaciones de acá ya no aplican (por ejemplo, el
 > árbol "limpio" y los pendientes de deploy).
 
+> **ACTUALIZACIÓN 2026-11-08:** KatDoc queda como producto vivo de la clínica #1 (su
+> Supabase y su Vercel, sin migración). Fonendo se construye aparte, desde el tag
+> `katdoc-fork-2026-11`. Estado actual, punto de corte y próximo paso en
+> **`docs/PLAN-ACCION.md` §14**. Este documento sigue sirviendo solo como detalle
+> histórico de las features de agosto.
+
 ## Estado del proyecto
 
 App de veterinaria **KATDOC** (vetcare-pro), Next.js 14.2.5 + Supabase + Tailwind.

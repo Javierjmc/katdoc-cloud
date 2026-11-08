@@ -1,41 +1,55 @@
 # FONENDO — Plan de acción técnico
 
-> Documento operativo. Última actualización: **2026-10-29**.
+> Documento operativo. Última actualización: **2026-11-08**.
 > Este archivo manda sobre cualquier otra nota técnica del repo.
 > Complementa a `docs/PLAN-LANZAMIENTO.md` (estrategia comercial), que fue revisado
 > el 2026-10-29 con los cambios de la sección 1.
 > Si hay contradicción entre los dos, manda este.
+>
+> **REVISIÓN 2026-11-08 — la clínica #1 NO se migra.** KatDoc queda como producto
+> vivo, con su repo, su Supabase y su Vercel. Fonendo nace de una copia en el tag
+> `katdoc-fork-2026-11` y crece aparte. Esto reemplaza la regla de oro anterior
+> ("cero commits en el repo actual") y saca el protocolo de migración del §11 del
+> camino crítico.
 
 ---
 
-## 1. Decisiones cerradas (2026-10-29)
+## 1. Decisiones cerradas (2026-10-29, revisadas 2026-11-08)
 
 | # | Decisión | Valor |
 |---|---|---|
 | 1 | Nombre comercial del SaaS | **Fonendo** |
-| 2 | Relación con KATDOC | KATDOC queda como marca de la clínica de la cuñada, **cliente #1 gratis**. Fonendo es el producto |
-| 3 | Código | **Repo nuevo separado**, copia con historial. El actual se congela |
-| 4 | Base de datos | **Proyecto Supabase nuevo**. El actual no se toca nunca |
-| 5 | Deploy | **Proyecto Vercel nuevo**. El actual sigue sirviendo a la clínica #1 |
+| 2 | Relación con KATDOC | KatDoc es el **producto propio de la clínica #1**, vivo y gratis. Fonendo es el SaaS que se vende y se construye aparte |
+| 3 | Código | **Repo nuevo separado**, copia con historial desde el tag `katdoc-fork-2026-11`. El repo actual **sigue vivo** como línea de mantenimiento |
+| 4 | Base de datos | **Proyecto Supabase nuevo** para Fonendo. El de KatDoc no se toca nunca |
+| 5 | Deploy | **Proyecto Vercel nuevo** para Fonendo. El actual sigue sirviendo a la clínica #1, indefinidamente |
 | 6 | Entrada de clientes | **Invitación manual**. Sin autorregistro hasta pasar $1.000 MRR |
 | 7 | Lanzamiento comercial | **1 de febrero de 2027** |
 | 8 | Gate de aislamiento | **15 de diciembre de 2026** (no se mueve) |
 | 9 | Dominio | Se compra en enero. Se trabaja con `*.vercel.app` |
 | 10 | Multi-tenant | Real, desde el día uno. Nunca multi-instancia |
+| 11 | Migración de la clínica #1 | **No se migra.** Opcional, solo después de $1.000 MRR (§11) |
 
 ### Por qué repo nuevo y no una rama
 
 Con una rama se sigue trabajando dentro del mismo repo y el riesgo de un push al
 remoto equivocado existe. Con un repo aparte el riesgo es cero por construcción.
-El costo es que un fix clínico pueda haber que aplicarlo dos veces (estimado: 0 a 2
-casos en todo el proyecto). Se acepta.
+
+Al no migrar la clínica #1, el costo es mantenimiento doble mientras KatDoc siga
+recibiendo cambios. Se acota con dos reglas:
+
+1. Los cambios de producto se hacen en KatDoc y se portan a Fonendo por
+   `git cherry-pick` (remoto `katdoc`, que apunta a la carpeta local).
+2. Después del **15 de diciembre**, KatDoc solo recibe fixes críticos, aplicados a mano
+   en cada línea. Nada de features nuevas en la línea vieja.
 
 ### Lo que cambia respecto de `PLAN-LANZAMIENTO.md`
 
 - §6 criterio de aceptación: ya no dice "cualquiera puede registrarse", dice "yo creo
   la clínica, invito a los usuarios, y la clínica A no ve ni un registro de la B".
 - §7 calendario: 13 semanas, lanzamiento 1 de febrero.
-- §9 protocolo: la clínica #1 **no se migra en el lugar**. Se copia a un proyecto nuevo.
+- §9 protocolo: **la clínica #1 no se migra**. Sigue en KatDoc. La migración queda como
+  opción post-$1.000 MRR, no como paso del lanzamiento.
 - Alcance de enero recortado: sin export CSV, sin caso de estudio en video, sin
   autorregistro.
 - Presupuesto real: ~165-180 h contra 140 h del plan original.
@@ -44,29 +58,32 @@ casos en todo el proyecto). Se acepta.
 
 ## 2. Regla de oro
 
-Hasta el día del corte, **no se toca**:
+Las dos líneas están separadas por construcción. Reglas que no se rompen:
 
-1. El Supabase actual de la clínica #1: ni una migración, ni una política, ni un UPDATE.
-2. El repo actual (`Javierjmc/katdoc-cloud`) y su deploy: cero commits, cero pushes.
-3. Su URL, su PIN y sus accesos: igual que hoy.
-
-Si una tarea requiere romper una de las tres, se replantea la tarea.
+1. **Nada de Fonendo toca el stack de KatDoc.** Ni una migración, ni un UPDATE, ni una
+   lectura sobre el Supabase `sjuditnsedkahilgcovi`, ni un deploy sobre su proyecto.
+2. **El código viaja en una sola dirección:** KatDoc → Fonendo por cherry-pick. Nunca al
+   revés. Fonendo puede romperse sin consecuencias para la clínica.
+3. **Cada carpeta tiene su propio `.env.local`.** El de KatDoc nunca se copia a Fonendo.
+4. **KatDoc puede recibir cambios**, pero por PR y con build verde. Es producción con
+   datos reales de pacientes.
+5. Después del **15 de diciembre**, KatDoc entra en mantenimiento: solo fixes críticos.
 
 ---
 
 ## 3. Arquitectura antes / después
 
-| Capa | Hoy (KATDOC) | Después (Fonendo) |
+| Capa | KatDoc (vive) | Fonendo (nuevo) |
 |---|---|---|
 | Código | `Documents\web\katdoc` → `Javierjmc/katdoc-cloud` | `Documents\web\fonendo-saas` → repo privado nuevo |
 | Base de datos | Supabase `sjuditnsedkahilgcovi` | Proyecto Supabase nuevo |
 | Deploy | Proyecto Vercel actual | Proyecto Vercel nuevo (Hobby → Pro) |
 | Auth | PIN global `APP_PIN` | Supabase Auth, email + contraseña, roles |
 | Storage | Buckets públicos | Bucket privado + bucket `branding` público |
-| Marca | KATDOC hardcodeado | White label por clínica. "Fonendo" solo en el shell |
+| Marca | KATDOC en `lib/brand.ts` | White label por clínica. "Fonendo" solo en el shell |
 
-El proyecto viejo queda **intacto y accesible 90 días** después del corte. Ese es el
-rollback real.
+No hay "corte" ni rollback: KatDoc sigue operando con su stack. Fonendo arranca en
+paralelo con un Supabase nuevo y no puede afectarlo.
 
 ---
 
@@ -125,12 +142,17 @@ Hay que resolverlos todos antes del gate. No están en el plan comercial origina
 | 6 | El cron y las notificaciones usan el cliente **anon** del lado servidor | `lib/notifications/scan.ts` importa `lib/supabase.ts` | Cliente `service_role` server-only, nunca importado desde el cliente. El cron itera por clínica |
 | 7 | Las API routes se autentican con `NEXT_PUBLIC_APP_PIN`, que está en el bundle | `lib/api-auth.ts`, `app/api/exams/parse`, `app/api/notifications/email`, `app/api/reminders/*` | Validar la sesión de Supabase. Rate limit en la ruta de IA (hoy cualquiera puede quemar la cuota de Gemini) |
 | 8 | `next.config.js` solo permite `/storage/v1/object/public/**` | `next.config.js` | Agregar `/object/sign/**` o usar `unoptimized` para imágenes de storage |
-| 9 | Los PDFs leen `/logo-katdoc.jpg` y `/sello-firma.jpg` de `/public`; hay `@katdoc.mv` hardcodeado | `lib/examPdf.ts`, `lib/recipePdf.ts` | Pasar los bytes del branding de la clínica. Verificar **paridad byte a byte** con los PDFs de hoy |
-| 10 | Marca hardcodeada | `components/AppShell.tsx`, `app/layout.tsx`, `public/manifest.json` | Nombre de la clínica desde `clinics`; "Fonendo" solo en shell y emails |
+| 9 | Los PDFs usaban rutas fijas y `@katdoc.mv` hardcodeado | `lib/examPdf.ts`, `lib/recipePdf.ts` | **Resuelto en KatDoc (2026-11-08):** `lib/brand.ts` centraliza rutas y contacto; sello con fondo blanco. En Fonendo falta que el branding venga de la tabla `clinics` y que el sello se suba por clínica |
+| 10 | Marca hardcodeada | `components/AppShell.tsx`, `app/layout.tsx`, `public/manifest.json` | **Resuelto en KatDoc (2026-11-08):** `lib/brand.ts` + `components/BrandMark.tsx`. En Fonendo, `BRAND` se reemplaza por la config de la clínica |
 | 11 | No hay ningún framework de test ni `supabase/config.toml` | `package.json` | Suite de aislamiento propia (`scripts/isolation-test.mjs`) |
 | 12 | Next 14.2.5, vulnerable a CVE-2025-29927 (bypass de middleware) | `package.json` | Subir a 14.2.25+ antes del gate. No depender solo del middleware: RLS manda |
 | 13 | No hay service role key en el entorno | `.env.local` | Agregar `SUPABASE_SERVICE_ROLE_KEY` solo para uso server-side |
 | 14 | La cuota de IA (60/250 lecturas) no existe en el código | — | Tabla de uso por clínica + chequeo en la ruta de parseo |
+| 15 | Doble línea de código (KatDoc + Fonendo) | — | Ventana de cherry-pick abierta hasta el 15 dic. Después, fixes a mano en cada línea |
+
+Los riesgos 9 y 10 ya están resueltos en KatDoc con `lib/brand.ts` y `components/BrandMark.tsx`.
+Ese refactor es el punto de enchufe del white-label en Fonendo: `BRAND` pasa a leerse de
+la tabla `clinics` y el sello se sube por clínica.
 
 ---
 
@@ -156,7 +178,7 @@ No se escribe producto todavía. Solo el entorno seguro.
 | # | Paso | Salida verificable |
 |---|---|---|
 | 1 | `pg_dump` del proyecto actual (solo esquema `public`) | Archivo local fechado. Producción intacta |
-| 2 | `gh repo create fonendo-saas --private` + clon con historial | Repo nuevo con los 26 commits |
+| 2 | `gh repo create fonendo-saas --private` + push | Repo nuevo con la historia hasta `katdoc-fork-2026-11` |
 | 3 | Snapshot inicial + `.env.local.example` + README | Punto de partida reproducible |
 | 4 | Proyecto Vercel nuevo apuntando al repo nuevo (Hobby) | `fonendo-saas.vercel.app` responde |
 | 5 | Restaurar esquema y datos en el Supabase nuevo | 84/99/46/27/37 filas |
@@ -166,6 +188,10 @@ No se escribe producto todavía. Solo el entorno seguro.
 
 **Definición de terminado:** entorno nuevo con los datos adentro, repo nuevo, y una
 prueba automática que demuestra que hoy no hay aislamiento. Producción sin tocar.
+
+**Sobre los datos copiados:** como la clínica #1 no se migra, esa copia es solo para
+desarrollo y pruebas. Anonimizar nombres y cédulas, o tratar `fonendo-dev` como
+producción desde el día uno.
 
 ### Comandos de referencia
 
@@ -193,10 +219,10 @@ Notas:
 | Fase | Semanas | Entregable | Criterio de aceptación |
 |---|---|---|---|
 | **A. Esquema multi-clínica** | 2-15 nov | `clinic_id` en las tablas, historia por clínica, cédula única por clínica | Dos clínicas cargan sin colisionar |
-| **B. Auth y roles** | 16-29 nov | Login email+password, owner/vet/asistente, cliente auth-aware | La clínica #1 entra sin PIN y ve solo lo suyo |
+| **B. Auth y roles** | 16-29 nov | Login email+password, owner/vet/asistente, cliente auth-aware | Un usuario de prueba entra sin PIN y ve solo lo suyo |
 | **C. RLS y storage privado** | 30 nov - 13 dic | Políticas en las 12 tablas, buckets privados, URLs firmadas, rutas migradas | **Test de aislamiento en verde** |
-| **D. Branding y alta** | 14 dic - 3 ene | **GATE 15 dic** + logo/RIF/firma por clínica con PDFs idénticos + alta manual + cuota IA | Sus reportes salen iguales a hoy |
-| **E. Landing y piloto** | 4-24 ene | Una página + precios + legales, ensayo del corte, migración real | Clínica #1 opera sin perder un dato |
+| **D. Branding y alta** | 14 dic - 3 ene | **GATE 15 dic** + logo/RIF/firma por clínica con PDFs propios + alta manual + cuota IA | Los reportes salen con el branding de cada clínica |
+| **E. Landing y piloto** | 4-24 ene | Una página + precios + legales, ensayo con datos de prueba | Un veterinario externo carga su primera consulta sin ayuda |
 | **F. Lanzamiento** | 25 ene - 1 feb | 2 pilotos, cobranza, material de venta | Primer pago |
 
 ### Criterio del gate (15 de diciembre)
@@ -233,14 +259,15 @@ Mientras haya un solo `true` en los puntos 1 a 10 con datos cruzados, el gate es
 
 | Servicio | Ahora | Trigger para pagar | Costo |
 |---|---|---|---|
-| Vercel | Hobby ($0) | **Antes de vender**: Hobby prohíbe uso comercial | Pro $20/mes |
-| Supabase (nuevo) | Free ($0) | **Antes de copiar los datos reales de la clínica #1**: Free no tiene backups | Pro $25/mes |
-| Supabase (actual) | ? | Verificar plan. Si está en Free, hoy no hay backups | Pro $25/mes |
+| Vercel (Fonendo) | Hobby ($0) | **Antes de vender**: Hobby prohíbe uso comercial | Pro $20/mes |
+| Supabase (Fonendo) | Free ($0) | **Antes de vender**: Free no tiene backups | Pro $25/mes |
+| Supabase (KatDoc) | ? | **Verificar ya**: si está en Free, la clínica #1 no tiene backups | Pro $25/mes |
 | Gemini | Free | Antes del lanzamiento (tier free entrena con los datos) | ~$0,005 por lectura |
 | Dominio | No comprado | Enero, para los pilotos | ~$12/año |
 
-Rampa real: noviembre-diciembre $0 → enero $70/mes (dos Supabase + Vercel) → al retirar
-el proyecto viejo, $45/mes.
+Rampa real: noviembre-diciembre $0 → enero $70/mes (dos Supabase + Vercel). Como KatDoc
+no se retira, los dos Supabase y los dos Vercel son **permanentes** mientras la clínica
+#1 siga en la línea vieja.
 
 ### Acción inmediata, cueste $0
 
@@ -250,9 +277,16 @@ pagar nada. Es lo primero que se hace en la fase 1.
 
 ---
 
-## 11. Protocolo de migración de la clínica #1
+## 11. Migración de la clínica #1 — opcional, fuera del lanzamiento
 
-Se ejecuta en enero, después del gate. En este orden:
+KatDoc sigue operando con su stack. Esta migración **no es parte del lanzamiento** y se
+evalúa solo después de pasar $1.000 MRR.
+
+Disparador: **60 días sin pedidos nuevos** de la clínica #1. Si en ese plazo no pidió
+nada, migrar es más barato que seguir manteniendo dos líneas. Si sigue pidiendo cosas,
+la doble línea se justifica sola.
+
+Si algún día se decide migrar, el protocolo es:
 
 1. Copia delta: filas y objetos creados desde la copia de la fase 1.
 2. **Congelar escrituras**: cambiar el `APP_PIN` del deployment viejo por uno aleatorio.
@@ -301,33 +335,54 @@ Datos para el caso de estudio (pedírselos a ella):
 
 ## 14. Cómo retomar
 
-Al abrir una sesión nueva:
+### Estado al 2026-11-08
 
-1. Leer este archivo.
-2. Revisar la sección 15 (bitácora) para saber dónde quedó.
-3. Verificar el estado real:
+| | |
+|---|---|
+| KatDoc producción | Branding nuevo live (PR #1 mergeado) |
+| Tag `katdoc-fork-2026-11` | En el último commit de `main`, no en `6782f87` |
+| `fonendo-saas` local | Clon exacto de `main` (sincronizado tras el último commit de docs). `origin` → repo nuevo (**no existe todavía**). Remoto `katdoc` a la carpeta local. Sin `.env.local` |
+| Fonendo remoto | **No creado** |
+| Supabase Fonendo | **No creado** |
+| Vercel Fonendo | **No creado** |
+| Siguiente paso | Crear el repo privado y pushear (§7, paso 2) |
+
+### Primer comando de mañana
 
 ```powershell
-# ¿El repo viejo sigue intacto?
-git -C "C:\Users\Martinez Pulvett\Documents\web\katdoc" log --oneline -3
-git -C "C:\Users\Martinez Pulvett\Documents\web\katdoc" status --short
-
-# ¿Existe el repo nuevo?
-Test-Path "C:\Users\Martinez Pulvett\Documents\web\fonendo-saas"
-
-# ¿El test de aislamiento está en verde o rojo?
-# (correrlo desde el repo nuevo cuando exista)
+cd "C:\Users\Martinez Pulvett\Documents\web\fonendo-saas"
+Test-Path .env.local          # tiene que dar False
+gh repo create fonendo-saas --private --source=. --push
+git push origin --tags
+git remote -v                 # origin = repo nuevo, katdoc = ..\katdoc
 ```
 
-4. Continuar por el primer paso sin marcar de la fase en curso.
+Después, sí: fase 0 y fase 1 (§6 y §7).
 
-Reglas de trabajo:
+### Verificación rápida del estado
+
+```powershell
+# KatDoc: main == origin/main, árbol limpio
+git -C "C:\Users\Martinez Pulvett\Documents\web\katdoc" status -sb
+git -C "C:\Users\Martinez Pulvett\Documents\web\katdoc" log --oneline -3
+
+# Fonendo: mismo commit y mismo tag que KatDoc
+git -C "C:\Users\Martinez Pulvett\Documents\web\fonendo-saas" log --oneline -1
+git -C "C:\Users\Martinez Pulvett\Documents\web\fonendo-saas" rev-parse --short "katdoc-fork-2026-11^{}"
+
+# Producción de KatDoc
+# https://katdoc-cloud.vercel.app/login debe mostrar el logo real
+```
+
+### Reglas de trabajo
 
 - Nunca commitear ni deployar sin pedido explícito.
 - Nunca pegar la cadena de conexión ni la service role key en el chat o en un archivo
   versionado.
-- Trabajar siempre en `fonendo-saas`. El repo `katdoc-cloud` es archivo histórico.
-- Antes de cada migración: backup.
+- El trabajo nuevo va en `fonendo-saas`. `katdoc-cloud` es la línea de la clínica #1 y
+  solo recibe fixes o mejoras de producto que también se porten.
+- Antes de cualquier migración o copia de datos: backup.
+- La ventana de cherry-pick se cierra el **15 de diciembre**.
 
 ---
 
@@ -339,3 +394,12 @@ Reglas de trabajo:
   riesgos técnicos no contemplados (sección 5). Decisiones cerradas: nombre Fonendo,
   repo nuevo, Supabase nuevo, Vercel nuevo, invitación manual, lanzamiento 1 de
   febrero, gate 15 de diciembre. Presupuesto reestimado en ~165-180 h.
+- **2026-11-08** — Rebranding de KatDoc: logo real en sidebar/login/reportes, sello sin
+  fondo gris en los PDFs, título de pestaña e íconos PWA. Se centraliza la marca en
+  `lib/brand.ts` + `components/BrandMark.tsx` y se agrega `scripts/procesar-marca.py`
+  (pipeline reproducible desde `assets/brand/`). PR #1 mergeado y desplegado.
+- **2026-11-08** — **Cambio de estrategia:** la clínica #1 no se migra. KatDoc queda
+  vivo como producto propio, con su Supabase y su Vercel. Fonendo nace de una copia en
+  el tag `katdoc-fork-2026-11` y crece aparte. Se elimina la migración del camino
+  crítico y se reemplaza la regla de oro (§2). Presupuesto y calendario del SaaS no
+  cambian.
