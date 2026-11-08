@@ -13,6 +13,7 @@ import {
   type PDFImage,
 } from 'pdf-lib';
 import type { LaboratoryExam } from '@/types';
+import { BRAND } from '@/lib/brand';
 
 export interface ExamPdfOptions {
   paciente?: string;
@@ -48,11 +49,13 @@ function wrap(text: string, font: PDFFont, size: number, maxWidth: number): stri
   return lines;
 }
 
-async function embedJpgAsset(doc: PDFDocument, url: string): Promise<PDFImage | null> {
+async function embedAsset(doc: PDFDocument, url: string): Promise<PDFImage | null> {
   try {
     const res = await fetch(url);
     if (!res.ok) return null;
     const bytes = await res.arrayBuffer();
+    const type = res.headers.get('content-type') ?? '';
+    if (type.includes('png')) return await doc.embedPng(bytes);
     return await doc.embedJpg(bytes);
   } catch {
     return null;
@@ -67,8 +70,8 @@ export async function buildExamPdf(
   const regular = await doc.embedFont(StandardFonts.Helvetica);
   const bold = await doc.embedFont(StandardFonts.HelveticaBold);
   const [logo, firma] = await Promise.all([
-    embedJpgAsset(doc, '/logo-katdoc.jpg'),
-    embedJpgAsset(doc, '/sello-firma.jpg'),
+    embedAsset(doc, BRAND.logo),
+    embedAsset(doc, BRAND.sello),
   ]);
 
   let page: PDFPage = doc.addPage([PAGE_W, PAGE_H]);

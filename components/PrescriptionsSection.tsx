@@ -7,6 +7,8 @@
 // - Impresión sin "PDF en blanco" (regla @media print en globals.css)
 
 import { useState } from 'react';
+import Image from 'next/image';
+import { BRAND } from '@/lib/brand';
 import {
   usePrescriptions,
   createPrescription,
@@ -346,7 +348,14 @@ export default function PrescriptionsSection({ patientId, patientNombre, tutorNo
           <div className="w-full max-w-md rounded-3xl bg-white dark:bg-surface-800 shadow-2xl p-6" onClick={e => e.stopPropagation()}>
             <div className="print-area text-sm text-surface-800 dark:text-white">
               <div className="text-center border-b border-surface-200 dark:border-surface-700 pb-3 mb-3">
-                <p className="font-black text-lg">🐾 KATDOC</p>
+                <Image
+                  src={BRAND.logo}
+                  alt={BRAND.name}
+                  width={130}
+                  height={110}
+                  unoptimized
+                  className="h-12 w-auto mx-auto"
+                />
                 <p className="text-xs text-surface-500 dark:text-surface-400">Recipe {patientNombre ? `— ${patientNombre}` : ''}</p>
                 {(patientRaza || patientEdad) && (
                   <p className="text-xs text-surface-500 dark:text-surface-400">{[patientRaza, patientEdad].filter(Boolean).join(' · ')}</p>

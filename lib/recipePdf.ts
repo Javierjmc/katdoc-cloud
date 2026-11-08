@@ -16,6 +16,7 @@ import {
   type PDFImage,
 } from 'pdf-lib';
 import type { Prescription } from '@/types';
+import { BRAND } from '@/lib/brand';
 
 export interface RecipePdfOptions {
   paciente?: string;
@@ -110,7 +111,7 @@ function drawForm(
       y: (top + bottom) / 2 - wmH / 2,
       width: wmW,
       height: wmH,
-      opacity: 0.15,
+      opacity: 0.08,
     });
   }
 
@@ -217,9 +218,9 @@ export async function buildRecipePdf(
   const bold = await doc.embedFont(StandardFonts.HelveticaBold);
 
   const [logo, qr, firma] = await Promise.all([
-    embedAsset(doc, '/logo-katdoc.jpg'),
-    embedAsset(doc, '/qr-katdoc.jpg'),
-    embedAsset(doc, '/sello-firma.jpg'),
+    embedAsset(doc, BRAND.logo),
+    embedAsset(doc, BRAND.qr),
+    embedAsset(doc, BRAND.sello),
   ]);
   const fonts: Fonts = { regular, bold, logo, qr, firma };
 
