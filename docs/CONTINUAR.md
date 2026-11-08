@@ -2,6 +2,11 @@
 
 > Para retomar el desarrollo al día siguiente. Leer esto primero.
 
+> **ACTUALIZACIÓN 2026-10-29:** este documento es histórico (agosto 2026) y describe
+> la etapa de una sola clínica. Para retomar el trabajo del SaaS leer
+> **`docs/PLAN-ACCION.md`**. Varias afirmaciones de acá ya no aplican (por ejemplo, el
+> árbol "limpio" y los pendientes de deploy).
+
 ## Estado del proyecto
 
 App de veterinaria **KATDOC** (vetcare-pro), Next.js 14.2.5 + Supabase + Tailwind.
