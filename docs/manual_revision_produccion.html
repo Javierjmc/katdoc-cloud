@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KATDOC — Manual de Revisión en Producción</title>
+<style>
+  :root{
+    --brand:#0ea5e9;
+    --brand-dark:#0284c7;
+    --ink:#0f172a;
+    --ink-2:#334155;
+    --muted:#64748b;
+    --line:#e2e8f0;
+    --line-2:#cbd5e1;
+    --bg:#ffffff;
+    --bg-soft:#f1f5f9;
+    --ok:#059669;
+    --warn:#d97706;
+    --bad:#dc2626;
+    --bad-soft:#fee2e2;
+    --warn-soft:#fef3c7;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html{font-size:14px;}
+  body{
+    font-family:"Segoe UI",Roboto,Arial,sans-serif;
+    color:var(--ink);
+    background:var(--bg);
+    line-height:1.5;
+    -webkit-print-color-adjust:exact;
+    print-color-adjust:exact;
+  }
+  .page{
+    width:100%;
+    padding:2.4rem 2.6rem;
+    page-break-after:always;
+  }
+  .page:last-child{page-break-after:auto;}
+
+  /* ── Portada ── */
+  .cover{
+    display:flex;flex-direction:column;justify-content:space-between;
+    min-height:80vh;
+    background:linear-gradient(160deg,#0f172a 0%,#1e293b 55%,#134e4a 100%);
+    color:#fff;
+  }
+  .cover .logo{display:flex;align-items:center;gap:.9rem;}
+  .cover .logo .mark{
+    width:3.4rem;height:3.4rem;border-radius:1rem;
+    background:var(--brand);display:flex;align-items:center;justify-content:center;
+    font-size:1.9rem;box-shadow:0 .6rem 1.6rem rgba(14,165,233,.45);
+  }
+  .cover .logo h1{font-size:1.9rem;font-weight:900;letter-spacing:-.02em;}
+  .cover .logo p{font-size:.85rem;color:#cbd5e1;}
+  .cover .title{margin-top:4rem;}
+  .cover .title .tag{
+    display:inline-block;background:var(--brand);color:#fff;font-weight:700;
+    font-size:.75rem;letter-spacing:.12em;text-transform:uppercase;
+    padding:.35rem .8rem;border-radius:999px;margin-bottom:1.2rem;
+  }
+  .cover .title h2{font-size:2.6rem;font-weight:900;line-height:1.1;letter-spacing:-.03em;}
+  .cover .title h2 span{color:#7dd3fc;}
+  .cover .title p.sub{margin-top:1rem;font-size:1rem;color:#cbd5e1;max-width:46rem;}
+  .cover .meta{
+    margin-top:4rem;display:flex;gap:2.4rem;flex-wrap:wrap;
+    border-top:1px solid rgba(148,163,184,.3);padding-top:1.4rem;
+    font-size:.85rem;color:#94a3b8;
+  }
+  .cover .meta b{color:#fff;font-weight:700;display:block;font-size:.9rem;}
+
+  /* ── Tipografía ── */
+  h2.sec{
+    font-size:1.35rem;font-weight:900;letter-spacing:-.01em;
+    padding-bottom:.5rem;border-bottom:3px solid var(--brand);
+    margin-bottom:1.2rem;display:flex;align-items:center;gap:.6rem;
+  }
+  h2.sec .num{
+    background:var(--brand);color:#fff;border-radius:.55rem;
+    width:1.9rem;height:1.9rem;display:inline-flex;align-items:center;justify-content:center;
+    font-size:1rem;flex:none;
+  }
+  h3.sub{font-size:1.02rem;font-weight:800;margin:1.4rem 0 .5rem;}
+  h4{font-size:.9rem;font-weight:800;margin:1rem 0 .35rem;color:var(--ink-2);}
+  p{margin-bottom:.5rem;}
+  ul,ol{margin:.2rem 0 .8rem 1.3rem;}
+  li{margin-bottom:.25rem;}
+  code{
+    font-family:Consolas,"Cascadia Mono",monospace;font-size:.82em;
+    background:var(--bg-soft);border:1px solid var(--line);
+    border-radius:.3rem;padding:.05rem .35rem;color:#0f4c81;
+  }
+  .lead{color:var(--ink-2);font-size:.95rem;}
+  .small{font-size:.82rem;color:var(--muted);}
+
+  /* ── Cajas ── */
+  .box{border-radius:.75rem;padding:.9rem 1.1rem;margin:.7rem 0;font-size:.9rem;}
+  .box.info{background:#ecfeff;border:1px solid #a5f3fc;color:#155e75;}
+  .box.warn{background:var(--warn-soft);border:1px solid #fde68a;color:#92400e;}
+  .box.bad{background:var(--bad-soft);border:1px solid #fecaca;color:#991b1b;}
+  .box.ok{background:#ecfdf5;border:1px solid #a7f3d0;color:#065f46;}
+  .box b{font-weight:800;}
+
+  /* ── Tablas ── */
+  table{width:100%;border-collapse:collapse;margin:.6rem 0 1rem;font-size:.86rem;}
+  th,td{border:1px solid var(--line);padding:.5rem .65rem;text-align:left;vertical-align:top;}
+  th{background:var(--bg-soft);font-weight:800;color:var(--ink-2);font-size:.8rem;text-transform:uppercase;letter-spacing:.03em;}
+  tr:nth-child(even) td{background:#f8fafc;}
+  td.code{font-family:Consolas,monospace;font-size:.8em;color:#0f4c81;}
+
+  /* ── Checklist ── */
+  .check{list-style:none;margin:.4rem 0 .9rem;}
+  .check li{padding:.42rem .4rem .42rem 1.9rem;position:relative;border-bottom:1px dashed var(--line);}
+  .check li:last-child{border-bottom:none;}
+  .check li::before{
+    content:"☐";position:absolute;left:.2rem;top:.4rem;
+    font-size:1.05rem;color:var(--brand-dark);font-weight:700;
+  }
+  .check li b{font-weight:800;}
+  .check li .ok-label{color:var(--ok);font-weight:700;}
+  .check li .ref{float:right;font-size:.75rem;color:var(--muted);}
+
+  .pill{display:inline-block;padding:.15rem .6rem;border-radius:999px;font-size:.72rem;font-weight:800;vertical-align:middle;}
+  .pill.green{background:#dcfce7;color:#166534;border:1px solid #bbf7d0;}
+  .pill.amber{background:#fef3c7;color:#92400e;border:1px solid #fde68a;}
+  .pill.red{background:#fee2e2;color:#991b1b;border:1px solid #fecaca;}
+  .pill.blue{background:#e0f2fe;color:#075985;border:1px solid #bae6fd;}
+
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:1.2rem;}
+  .kv{display:flex;justify-content:space-between;border-bottom:1px dashed var(--line);padding:.35rem 0;font-size:.86rem;}
+  .kv b{font-weight:800;color:var(--ink-2);}
+  .kv code{font-size:.82em;}
+
+  .footer-note{
+    margin-top:1.6rem;padding-top:.9rem;border-top:1px solid var(--line);
+    font-size:.78rem;color:var(--muted);
+  }
+
+  /* ── Firmas ── */
+  .sig{display:flex;gap:2rem;margin-top:2rem;}
+  .sig .block{flex:1;border-top:2px solid var(--ink);padding-top:.5rem;font-size:.82rem;color:var(--muted);}
+
+  @page{size:A4;margin:0;}
+  @media print{
+    body{-webkit-print-color-adjust:exact;}
+    .page{padding:2.2rem 2.4rem;}
+  }
+</style>
+</head>
+<body>
+
+<!-- ══════════════ PORTADA ══════════════ -->
+<div class="page cover">
+  <div>
+    <div class="logo">
+      <div class="mark">🐾</div>
+      <div>
+        <h1>KAT<span style="color:#7dd3fc;">DOC</span></h1>
+        <p>Historias Clínicas Veterinarias · VetCare Pro</p>
+      </div>
+    </div>
+
+    <div class="title">
+      <span class="tag">Manual operativo</span>
+      <h2>Revisión de la aplicación<br>en <span>producción</span></h2>
+      <p class="sub">Checklist paso a paso para verificar que la app, la base de datos, el cron de recordatorios y los servicios externos (Supabase, Gemini, Resend, Vercel) están sanos y funcionando antes de darla por buena.</p>
+    </div>
+  </div>
+
+  <div class="meta">
+    <div><b>Versión</b>1.0.0</div>
+    <div><b>Producto</b>KATDOC / VetCare Pro</div>
+    <div><b>Stack</b>Next.js 14 · Supabase · Vercel</div>
+    <div><b>Fecha</b>01-sep-2026</div>
+    <div><b>Revisor</b>____________________</div>
+  </div>
+</div>
+
+<!-- ══════════════ 1. OBJETIVO ══════════════ -->
+<div class="page">
+  <h2 class="sec"><span class="num">1</span>Objetivo y cómo usar este manual</h2>
+  <p class="lead">Este manual es una guía operativa para <b>revisar la app en producción</b>: cada módulo de la interfaz, los servicios de backend, la base de datos y el cron automático. No es documentación de desarrollo: es una lista de comprobación para validar el estado VIVO del sistema.</p>
+
+  <h3 class="sub">Modo de uso</h3>
+  <ul>
+    <li>Ejecutar en un <b>navegador real</b> (desktop y móvil) contra la URL de producción.</li>
+    <li>Marcar <b>☐</b> cada ítem conforme pasa. Si algo falla, anotar en la columna de comentarios / hoja de hallazgos (sección 10).</li>
+    <li>Los ítems marcados con <span class="pill red">CRÍTICO</span> deben funcionar sí o sí; si fallan, la app no se considera operativa.</li>
+    <li>Antes de empezar, tener a mano: URL de producción, PIN de acceso, acceso al dashboard de Supabase y al proyecto de Vercel.</li>
+  </ul>
+
+  <div class="box info"><b>Entorno de referencia.</b> Proyecto Supabase: <code>sjuditnsedkahilgcovi</code> · Cron Vercel: <code>/api/reminders/scan</code> a las <code>13:00 UTC</code>. Estos datos se confirman en la sección 8.</div>
+
+  <h3 class="sub">Variables de entorno requeridas en Vercel</h3>
+  <table>
+    <tr><th>Variable</th><th>Uso</th><th>Si falta…</th></tr>
+    <tr><td class="code">NEXT_PUBLIC_SUPABASE_URL</td><td>Conexión a la BD</td><td>La app no arranca</td></tr>
+    <tr><td class="code">NEXT_PUBLIC_SUPABASE_ANON_KEY</td><td>Conexión a la BD</td><td>La app no arranca</td></tr>
+    <tr><td class="code">NEXT_PUBLIC_APP_PIN</td><td>Login por PIN</td><td>Login con PIN por defecto <code>0000</code></td></tr>
+    <tr><td class="code">GEMINI_API_KEY</td><td>IA de exámenes de laboratorio</td><td>El parseo de exámenes falla (503)</td></tr>
+    <tr><td class="code">RESEND_API_KEY</td><td>Emails de recordatorio</td><td>Email cae a <code>mailto:</code> (simulado)</td></tr>
+    <tr><td class="code">RESEND_FROM</td><td>Remitente de emails</td><td>Usa <code>onboarding@resend.dev</code></td></tr>
+    <tr><td class="code">CRON_SECRET</td><td>Auth del cron <code>/api/reminders/scan</code></td><td>El cron recibe 401</td></tr>
+  </table>
+  <div class="box warn"><b>OJO.</b> <code>CRON_SECRET</code> debe coincidir exactamente en Vercel y en la definición del cron. Si no, el recordatorio automático diario no corre.</div>
+</div>
+
+<!-- ══════════════ 2. ACCESO Y SEGURIDAD ══════════════ -->
+<div class="page">
+  <h2 class="sec"><span class="num">2</span>Acceso y seguridad</h2>
+
+  <h3 class="sub">2.1 Login</h3>
+  <ul class="check">
+    <li>Al abrir <code>/</code> se redirige a <code>/login</code> (no al dashboard) sin sesión. <span class="ref">middleware.ts</span></li>
+    <li>El teclado numérico de PIN acepta exactamente <b>4 dígitos</b> y valida solo al completarlos. <span class="ref">app/login/page.tsx</span></li>
+    <li><span class="pill red">CRÍTICO</span> Con PIN correcto entra al <b>dashboard</b>; con PIN incorrecto muestra <i>"PIN incorrecto"</i>, hace shake y limpia el campo. <span class="ref">validatePin()</span></li>
+    <li>Tras loguear, al recargar cualquier página interna se mantiene la sesión (no vuelve a pedir PIN). <span class="ref">sessionStorage vetcare_auth</span></li>
+    <li>El botón <b>Cerrar sesión</b> en el menú vuelve a <code>/login</code> y revoca el acceso. <span class="ref">AppShell.handleLogout()</span></li>
+    <li>Si la sesión expira o se limpia el storage, las rutas protegidas redirigen a <code>/login</code> (sin pantalla rota). <span class="ref">auth check en cada página</span></li>
+  </ul>
+
+  <div class="box warn"><b>Nota de seguridad.</b> La autenticación es un PIN en <code>sessionStorage</code> (client-side). Es suficiente para el uso clínico interno, pero <b>no</b> es autenticación fuerte. No hay RLS en las tablas: la anon key tiene acceso de lectura/escritura completo. Si se van a manejar datos sensibles o multi-clínica, migrar a Supabase Auth + RLS (deuda técnica conocida, ver sección 11).</div>
+
+  <h3 class="sub">2.2 Protección de API routes</h3>
+  <table>
+    <tr><th>Ruta</th><th>Métodos</th><th>Auth</th><th>Función</th></tr>
+    <tr><td class="code">/api/reminders/scan</td><td>GET, POST</td><td>PIN o Bearer CRON_SECRET</td><td>Ejecuta el motor de recordatorios</td></tr>
+    <tr><td class="code">/api/reminders</td><td>GET, PATCH</td><td>PIN</td><td>Lista / actualiza recordatorios</td></tr>
+    <tr><td class="code">/api/notifications/email</td><td>POST</td><td>PIN</td><td>Envía email vía Resend (o fallback mailto)</td></tr>
+    <tr><td class="code">/api/exams/parse</td><td>POST</td><td>PIN</td><td>Parsea exámenes con Gemini</td></tr>
+  </table>
+
+  <h3 class="sub">2.3 Pruebas rápidas de API</h3>
+  <ul class="check">
+    <li><span class="pill red">CRÍTICO</span> <code>GET /api/reminders/scan</code> <b>sin</b> header devuelve <code>401</code>.</li>
+    <li><code>GET /api/reminders/scan</code> con header <code>x-app-pin: &lt;PIN&gt;</code> devuelve <code>200</code> con <code>{"creados":N,"existentes":N,"errores":N}</code>.</li>
+    <li><code>POST /api/exams/parse</code> sin header devuelve <code>401</code>; con archivo inválido devuelve <code>400</code>.</li>
+    <li><code>POST /api/notifications/email</code> sin header devuelve <code>401</code>.</li>
+  </ul>
+
+  <div class="box warn"><b>Importante:</b> no abrir <code>/api/reminders/scan</code> en el navegador directo sin header de PIN, salvo que se quiera confirmar el 401.</div>
+</div>
+
+<!-- ══════════════ 3. DASHBOARD ══════════════ -->
+<div class="page">
+  <h2 class="sec"><span class="num">3</span>Dashboard</h2>
+  <p class="lead">Ruta <code>/dashboard</code> · Estadísticas generales + próximos eventos + buscador global + listado de pacientes.</p>
+
+  <h3 class="sub">3.1 Estadísticas y carga</h3>
+  <ul class="check">
+    <li>Se muestran 3 tarjetas: <b>Tutores</b>, <b>Pacientes</b> y <b>Consultas</b> con conteos reales de la BD. <span class="ref">dashboard_search</span></li>
+    <li>La pantalla muestra skeletons mientras carga (sin flashes de contenido incorrecto).</li>
+    <li>El botón <b>Nuevo Paciente</b> lleva a <code>/patients/new</code>.</li>
+  </ul>
+
+  <h3 class="sub">3.2 Próximos eventos (7 días)</h3>
+  <ul class="check">
+    <li>Se listan citas <i>programadas/confirmadas</i> y próximas vacunas, desparasitaciones y controles de examen de los próximos 7 días. <span class="ref">useCalendarEvents</span></li>
+    <li>El estado vacío muestra <i>"Sin citas ni controles pendientes esta semana."</i> sin errores.</li>
+    <li>Cada evento muestra tipo (badge de color), paciente, fecha y hora, y enlaza al perfil del paciente.</li>
+    <li>El link <b>Ver agenda ›</b> abre <code>/agenda</code>.</li>
+  </ul>
+
+  <h3 class="sub">3.3 Buscador y filtros</h3>
+  <ul class="check">
+    <li>El buscador encuentra por <b>mascota, tutor, cédula y n° de historia</b> (con debounce de 250 ms).</li>
+    <li>El filtro de <b>especie</b> (chips) filtra el listado y se recuerda entre sesiones. <span class="ref">localStorage</span></li>
+    <li>Con búsqueda sin resultados muestra <i>"Sin resultados"</i>; sin datos muestra estado vacío con CTA <i>Registrar paciente</i>.</li>
+  </ul>
+
+  <h3 class="sub">3.4 Listado y paginación</h3>
+  <ul class="check">
+    <li>Se muestran tarjetas de paciente (foto o emoji, nombre, especie, tutor, n° historia, fecha de última consulta).</li>
+    <li>Con más de 9 resultados aparece el botón <b>Cargar más</b> y funciona.</li>
+    <li>Cada tarjeta enlaza a <code>/patients/&lt;id&gt;</code>.</li>
+  </ul>
+</div>
+
+<!-- ══════════════ 4. PACIENTES ══════════════ -->
+<div class="page">
+  <h2 class="sec"><span class="num">4</span>Pacientes</h2>
+  <p class="lead">Rutas <code>/patients</code> · <code>/patients/new</code> · <code>/patients/[id]</code> · <code>/patients/[id]/edit</code> · <code>/patients/[id]/reporte</code>.</p>
+
+  <h3 class="sub">4.1 Listado</h3>
+  <ul class="check">
+    <li>Pestañas <b>Activos / Inactivos</b> con conteos correctos.</li>
+    <li>Vista <b>Grid</b> y <b>Lista</b> funcionan y se recuerdan entre sesiones. <span class="ref">localStorage patients_view</span></li>
+    <li>Buscador por nombre, raza, tutor y cédula + filtro de especie.</li>
+    <li>Paginación <i>Cargar más</i> (12 por página) funciona.</li>
+    <li>Los pacientes inactivos se marcan visualmente (<i>Inactivo</i>).</li>
+  </ul>
+
+  <h3 class="sub">4.2 Crear paciente (formulario)</h3>
+  <ul class="check">
+    <li><span class="pill red">CRÍTICO</span> Se puede registrar un paciente nuevo con tutor (nuevo o existente), especie, datos y foto. <span class="ref">PatientForm</span></li>
+    <li>La validación zod rechaza datos incompletos mostrando errores por campo. <span class="ref">lib/schemas.ts</span></li>
+    <li>La foto se sube al bucket <code>pet-photos</code> y se muestra tras guardar.</li>
+    <li>El botón <b>Editar</b> en el perfil permite modificar datos y foto.</li>
+    <li>Se puede <b>desactivar</b> un paciente (pasa a pestaña Inactivos y deja de generar recordatorios).</li>
+  </ul>
+
+  <h3 class="sub">4.3 Perfil del paciente</h3>
+  <ul class="check">
+    <li>El perfil muestra: datos de la mascota, tutor, foto, edad calculada.</li>
+    <li>Secciones de historial: consultas, vacunas, exámenes, recetas, ecografías, citas.</li>
+    <li>Botón para <b>crear nueva consulta</b> (va a <code>/records/new?patientId=</code>).</li>
+    <li>Botón para generar <b>reporte/impresión</b> (imprimir historial por navegador).</li>
+    <li>El historial clínico de un paciente con varias consultas se lista ordenado (más reciente primero).</li>
+  </ul>
+
+  <div class="box info"><b>Dato.</b> El n° de historia clínica es correlativo generado en BD por <code>generate_numero_historia()</code>.</div>
+</div>
+
+<!-- ══════════════ 5. TUTORES ══════════════ -->
+<div class="page">
+  <h2 class="sec"><span class="num">5</span>Tutores / Propietarios</h2>
+  <p class="lead">Rutas <code>/tutors</code> · <code>/tutors/[id]</code> · <code>/tutors/[id]/edit</code>.</p>
+
+  <ul class="check">
+    <li>El listado muestra todos los propietarios con su cédula, teléfono y <b>n° de mascotas</b>.</li>
+    <li>El buscador filtra por nombre, cédula, teléfono o nombre de mascota.</li>
+    <li>Expandir un tutor muestra email, dirección, botón <b>Editar tutor</b> y sus mascotas.</li>
+    <li><span class="pill red">CRÍTICO</span> <b>Agregar mascota</b> desde un tutor pre-rellena el formulario de nuevo paciente con sus datos. <span class="ref">buildNewPetUrl()</span></li>
+    <li>Cada mascota enlaza a su perfil.</li>
+    <li>Editar tutor permite corregir datos de contacto y persiste.</li>
+    <li>Paginación <i>Cargar más</i> (10 por página) funciona.</li>
+  </ul>
+
+  <div class="box warn"><b>Verificar:</b> si un tutor tiene 0 mascotas, muestra el mensaje <i>"Sin mascotas — Registrar primera"</i> con enlace funcional.</div>
+</div>
+
+<!-- ══════════════ 6. AGENDA ══════════════ -->
+<div class="page">
+  <h2 class="sec"><span class="num">6</span>Agenda y citas</h2>
+  <p class="lead">Ruta <code>/agenda</code> · Calendario mensual con citas + próximas vacunas/desparasitaciones/controles de examen + agendado de citas.</p>
+
+  <h3 class="sub">6.1 Calendario</h3>
+  <ul class="check">
+    <li>El calendario mensual se muestra correcto (días alineados, leyenda de tipos arriba en desktop).</li>
+    <li>La navegación ‹ › cambia de mes y el botón <b>Hoy</b> vuelve al mes/fecha actual.</li>
+    <li>Los eventos del día aparecen con su color: <b>Cita</b> (brand), <b>Vacuna</b> (azul), <b>Desparasitación</b> (verde), <b>Control examen</b> (amarillo).</li>
+    <li>Si un día tiene más de 3 eventos muestra "+N más".</li>
+    <li>Hacer click en un día abre el panel de detalle del día.</li>
+  </ul>
+
+  <h3 class="sub">6.2 Agendar cita</h3>
+  <ul class="check">
+    <li><span class="pill red">CRÍTICO</span> El botón <b>+ Agendar cita</b> abre el modal con paciente (requerido), hora, motivo y notas.</li>
+    <li>La validación zod exige seleccionar paciente; campos malos marcan error y muestran toast. <span class="ref">appointmentSchema</span></li>
+    <li>Al guardar, la cita aparece en el día correspondiente con estado <i>Programada</i>.</li>
+    <li>La cita generada crea su <b>recordatorio</b> al correr el scan (sección 8).</li>
+    <li>En el perfil del paciente el módulo de citas permite cambiar estado (programada/confirmada/completada/cancelada/no asistió).</li>
+  </ul>
+
+  <div class="box warn"><b>Verificar:</b> las citas con estado programada o confirmada aparecen también en "Próximos eventos" del dashboard.</div>
+</div>
+
+<!-- ══════════════ 7. HISTORIAS CLÍNICAS ══════════════ -->
+<div class="page">
+  <h2 class="sec"><span class="num">7</span>Historias clínicas</h2>
+  <p class="lead">Rutas <code>/records/new</code> · <code>/records/[id]</code> · Formulario médico completo.</p>
+
+  <h3 class="sub">7.1 Nueva consulta</h3>
+  <ul class="check">
+    <li><span class="pill red">CRÍTICO</span> Se puede crear una historia clínica para un paciente activo con su n° de historia correlativo auto-asignado. <span class="ref">getNextNumeroHistoria()</span></li>
+    <li>El formulario incluye: anamnesis, motivo, constantes vitales, checklist de los <b>12 sistemas clínicos</b> (N / AN / NE), notas por sistema, hallazgos y adjunto PDF. <span class="ref">SISTEMAS_CONFIG</span></li>
+    <li>Los sistemas con estado <i>Anormal</i> se resaltan y permiten nota de descargo.</li>
+    <li>Se puede adjuntar un documento (bucket <code>medical-documents</code>) y se enlaza desde la historia.</li>
+    <li>Guardar persiste y redirige a <code>/records/[id]</code>.</li>
+  </ul>
+
+  <h3 class="sub">7.2 Detalle de historia</h3>
+  <ul class="check">
+    <li>La vista muestra todos los datos de la consulta y los estados de sistemas.</li>
+    <li>Permite <b>editar</b> la historia.</li>
+    <li>Permite <b>imprimir / guardar como PDF</b> (impresión por navegador).</li>
+  </ul>
+
+  <div class="box warn"><b>Limitación conocida:</b> el "PDF" es impresión por navegador (Ctrl+P), no un archivo generado server-side. Verificar que la vista de impresión salga legible.</div>
+
+  <h3 class="sub">7.3 Exámenes de laboratorio (IA)</h3>
+  <ul class="check">
+    <li><span class="pill red">CRÍTICO</span> Se puede subir un examen (PDF/imagen) y el sistema extrae analitos con <b>Gemini</b>: nombre del examen, laboratorio, fecha, tabla de analitos con flag N/ALTO/BAJO. <span class="ref">/api/exams/parse</span></li>
+    <li>Se permite editar/corregir los analitos extraídos y guardar.</li>
+    <li>Si la IA no encuentra datos devuelve error claro: <i>"No se pudo extraer información…"</i>.</li>
+    <li>Si <code>GEMINI_API_KEY</code> no está configurada, la subida responde 503 con mensaje (verificar en producción que responde 200).</li>
+  </ul>
+
+  <h3 class="sub">7.4 Vacunas y desparasitaciones</h3>
+  <ul class="check">
+    <li>Se registra vacuna con nombre, fecha de aplicación y <b>fecha de próxima dosis</b> (opcional).</li>
+    <li>Las desparasitaciones se detectan por palabra clave del nombre (drontal, milbemax, etc.). <span class="ref">guessTipo()</span></li>
+    <li>Una vacuna con próxima dosis genera su <b>recordatorio</b> en la ventana configurada.</li>
+  </ul>
+
+  <h3 class="sub">7.5 Recetas y ecografías</h3>
+  <ul class="check">
+    <li>Las recetas permiten agregar medicamentos (nombre, presentación, dosis, frecuencia, duración, vía, indicaciones) y <b>editar antes de guardar/imprimir</b>.</li>
+    <li>Las ecografías permiten registrar órgano, hallazgos, conclusiones, mediciones e <b>imágenes</b> (bucket <code>ecografias</code>).</li>
+  </ul>
+</div>
+
+<!-- ══════════════ 8. NOTIFICACIONES ══════════════ -->
+<div class="page">
+  <h2 class="sec"><span class="num">8</span>Notificaciones y recordatorios</h2>
+  <p class="lead">Rutas <code>/notifications</code> · <code>/config</code> · Motor automático <code>/api/reminders/scan</code>.</p>
+
+  <h3 class="sub">8.1 Centro de notificaciones</h3>
+  <ul class="check">
+    <li>Pestaña <b>Pendientes</b> agrupa recordatorios <b>Vencidos</b> (rojo) y <b>Próximos</b> (naranja) con paciente, tutor, fecha y tipo.</li>
+    <li><span class="pill red">CRÍTICO</span> El botón <b>🔍 Chequear ahora</b> corre el scan y muestra toast con cuántos recordatorios nuevos creó. <span class="ref">runScanNow()</span></li>
+    <li>Acciones por recordatorio: <b>WhatsApp</b> (abre wa.me), <b>Email</b>, <b>✓ Enviado</b>, <b>⏰ Sin respuesta</b>, <b>Descartar</b>.</li>
+    <li>Pestaña <b>Seguimiento</b> lista clientes sin respuesta con días transcurridos y <b>historial de intentos</b> (log).</li>
+    <li>En seguimiento se puede re-enviar WhatsApp/email, marcar <i>Respondió</i>, volver a pendiente o descartar.</li>
+  </ul>
+
+  <h3 class="sub">8.2 Motor de recordatorios (scan) — verificación</h3>
+  <ul class="check">
+    <li><span class="pill red">CRÍTICO</span> El scan crea recordatorios para: <b>vacunas/desparasitaciones</b> con próxima dosis, <b>exámenes</b> con próximo control y <b>citas</b> programadas/confirmadas, solo de pacientes activos. <span class="ref">lib/notifications/scan.ts</span></li>
+    <li>Es <b>idempotente</b>: correrlo dos veces no duplica recordatorios (UNIQUE patient+tipo+fecha+título).</li>
+    <li>Solo crea el recordatorio si la fecha está dentro de la ventana: <i>días_antes</i> del evento hasta <i>máx(días_despues, 3)</i> días después.</li>
+    <li><span class="pill red">CRÍTICO</span> El cron de Vercel dispara <code>/api/reminders/scan</code> todos los días a las <code>13:00 UTC</code>. <span class="ref">vercel.json</span></li>
+    <li>Para probar: correr el scan manual desde el botón y verificar que el conteo crece correctamente.</li>
+  </ul>
+
+  <h3 class="sub">8.3 Configuración de ventanas (<code>/config</code>)</h3>
+  <ul class="check">
+    <li>Existen 6 tipos por defecto: <b>vacuna, desparasitacion, examen, control, cita, seguimiento</b>, cada uno con días antes/después y toggle enabled. <span class="ref">notification_config</span></li>
+    <li>Los presets rápidos (7, 21, 30, 45, 60, 90 días) actualizan el valor al click.</li>
+    <li>Se pueden editar días antes/después por input y activar/desactivar.</li>
+    <li>Se puede agregar un tipo personalizado y eliminar uno existente (con confirmación).</li>
+    <li>Los cambios persisten y afectan el siguiente scan.</li>
+  </ul>
+
+  <h3 class="sub">8.4 Canales de envío</h3>
+  <ul class="check">
+    <li><b>WhatsApp:</b> abre <code>wa.me</code> con el mensaje pre-armado (envío manual por el staff).</li>
+    <li><b>Email:</b> si <code>RESEND_API_KEY</code> está configurada, envía vía Resend; si no, abre <code>mailto:</code> y avisa <i>"Resend no configurado"</i>. <span class="ref">provider.ts</span></li>
+    <li>Todo envío registra en <code>notification_log</code> (historial de intentos).</li>
+  </ul>
+
+  <div class="box warn"><b>Check específico de prod:</b> confirmar si el email usa <code>onboarding@resend.dev</code> (solo envía al dueño) o un dominio verificado. Para envíos reales a clientes debe haber un dominio verificado en Resend.</div>
+</div>
+
+<!-- ══════════════ 9. INFRAESTRUCTURA ══════════════ -->
+<div class="page">
+  <h2 class="sec"><span class="num">9</span>Infraestructura y plataforma</h2>
+
+  <h3 class="sub">9.1 Vercel</h3>
+  <ul class="check">
+    <li>El deploy de producción corresponde a la rama <code>main</code> (o la configurada) y está <b>último commit</b>.</li>
+    <li>Los <b>deploys de producción</b> terminan en estado <i>Ready</i> sin errores de build.</li>
+    <li>Las 7 variables de entorno (sección 1) están cargadas en Production (idealmente también en Preview/Development).</li>
+    <li>El <b>cron</b> <code>/api/reminders/scan</code> está activo en el plan y se puede ver su historial de ejecución en Vercel → Cron.</li>
+    <li>El dominio apunta correctamente (HTTPS válido).</li>
+    <li>La región configurada (<code>iad1</code>) responde.</li>
+  </ul>
+
+  <h3 class="sub">9.2 Supabase</h3>
+  <ul class="check">
+    <li>El proyecto está en estado saludable (sin pausa, sin alertas de storage/BD).</li>
+    <li>Existen las tablas: <code>tutors</code>, <code>patients</code>, <code>medical_records</code>, <code>vaccinations</code>, <code>laboratory_exams</code>, <code>prescriptions</code>, <code>ecografias</code>, <code>appointments</code>, <code>notification_config</code>, <code>reminders</code>, <code>notification_log</code>.</li>
+    <li>Existe la vista <code>dashboard_search</code> (con campo <code>active</code>).</li>
+    <li>Los <b>buckets</b> existen y están públicos: <code>pet-photos</code>, <code>medical-documents</code>, <code>lab-exams</code>, <code>ecografias</code>.</li>
+    <li>La función <code>generate_numero_historia()</code> funciona (se generan n° correlativos).</li>
+    <li>La migración <code>20260829</code> fue aplicada (8 tablas + <code>patients.active</code> + vista con <code>active</code> + 6 presets de config).</li>
+    <li>No hay errores constantes en los logs de Supabase (funciones edge / REST).</li>
+  </ul>
+
+  <h3 class="sub">9.3 Almacenamiento (Storage)</h3>
+  <ul class="check">
+    <li>Subir y ver una foto de paciente funciona (bucket <code>pet-photos</code>).</li>
+    <li>Subir y abrir un examen funciona (bucket <code>lab-exams</code>).</li>
+    <li>Subir y ver imágenes de ecografía funciona (bucket <code>ecografias</code>).</li>
+    <li>Adjuntar documento a historia funciona (bucket <code>medical-documents</code>).</li>
+    <li>Los archivos subidos tienen URL pública accesible.</li>
+  </ul>
+</div>
+
+<!-- ══════════════ 10. PRUEBA END-TO-END Y HALLAZGOS ══════════════ -->
+<div class="page">
+  <h2 class="sec"><span class="num">10</span>Prueba end-to-end y hoja de hallazgos</h2>
+
+  <h3 class="sub">10.1 Flujo completo recomendado</h3>
+  <ol>
+    <li>Entrar con el PIN → Dashboard.</li>
+    <li>Crear un <b>tutor</b> nuevo (o usar uno de prueba).</li>
+    <li>Agregar una <b>mascota</b> con foto → queda en Pacientes.</li>
+    <li>Abrir el perfil → crear una <b>consulta</b> con checklist de sistemas y adjunto.</li>
+    <li>Registrar una <b>vacuna</b> con próxima dosis a ~10 días.</li>
+    <li>Subir un <b>examen</b> PDF/imagen → verificar analitos extraídos por IA.</li>
+    <li>Agendar una <b>cita</b> en la agenda para dentro de una semana.</li>
+    <li>Ir a <b>Avisos</b> → <i>Chequear ahora</i> → deben crearse los recordatorios de vacuna y cita (según ventanas).</li>
+    <li>Probar <b>WhatsApp</b> (abre wa.me) y <b>Email</b> en un recordatorio.</li>
+    <li>Marcar uno como <b>Sin respuesta</b> → aparece en la pestaña Seguimiento.</li>
+    <li>Verificar que el dashboard muestra la cita en <i>Próximos eventos</i>.</li>
+    <li>Verificar la vista de <b>impresión</b> del reporte de paciente e historia.</li>
+  </ol>
+
+  <h3 class="sub">10.2 Verificaciones transversales</h3>
+  <ul class="check">
+    <li>La app se ve y funciona en <b>móvil</b> (bottom nav) y <b>desktop</b> (sidebar).</li>
+    <li>El <b>tema oscuro/claro</b> funciona con el toggle y persiste.</li>
+    <li>No hay errores en la consola del navegador en las rutas principales.</li>
+    <li>Los tiempos de carga son razonables (sin requests colgados).</li>
+  </ul>
+
+  <h3 class="sub">10.3 Hoja de hallazgos</h3>
+  <table>
+    <tr><th style="width:6%">N°</th><th style="width:8%">Gravedad</th><th style="width:30%">Sección / pantalla</th><th>Descripción del problema</th></tr>
+    <tr><td></td><td></td><td></td><td></td></tr>
+    <tr><td></td><td></td><td></td><td></td></tr>
+    <tr><td></td><td></td><td></td><td></td></tr>
+    <tr><td></td><td></td><td></td><td></td></tr>
+    <tr><td></td><td></td><td></td><td></td></tr>
+  </table>
+  <p class="small">Gravedad: <b>Crítica</b> (bloquea el uso) · <b>Alta</b> (afecta flujo principal) · <b>Media</b> (afecta uso secundario) · <b>Baja</b> (cosmético).</p>
+
+  <h3 class="sub">10.4 Resultado de la revisión</h3>
+  <table>
+    <tr><th>Ítem</th><th>Valor</th></tr>
+    <tr><td>Resultado general</td><td>☐ APTO para uso   ☐ APTO con observaciones   ☐ NO APTO</td></tr>
+    <tr><td>Hallazgos críticos</td><td>____</td></tr>
+    <tr><td>Hallazgos no críticos</td><td>____</td></tr>
+    <tr><td>Recomendaciones</td><td>____</td></tr>
+    <tr><td>Fecha de revisión</td><td>____</td></tr>
+  </table>
+
+  <div class="sig">
+    <div class="block">Revisor — Nombre y firma</div>
+    <div class="block">Clínica / responsable — Nombre y firma</div>
+  </div>
+</div>
+
+<!-- ══════════════ 11. RIESGOS Y DEUDAS TÉCNICAS ══════════════ -->
+<div class="page">
+  <h2 class="sec"><span class="num">11</span>Riesgos y deudas técnicas conocidas</h2>
+  <table>
+    <tr><th>Área</th><th>Riesgo / deuda</th><th>Impacto</th><th>Recomendación</th></tr>
+    <tr><td>Seguridad</td><td>No hay RLS en tablas; la anon key tiene acceso amplio.</td><td>Alto si hay datos sensibles</td><td>Migrar a Supabase Auth + RLS</td></tr>
+    <tr><td>Autenticación</td><td>PIN en sessionStorage, client-side.</td><td>Medio</td><td>Auth real o al menos renovar PIN</td></tr>
+    <tr><td>Email</td><td>Resend gratis (100/día) y dominio no verificado → mailto fallback.</td><td>Medio</td><td>Verificar dominio en Resend</td></tr>
+    <tr><td>WhatsApp</td><td>Envío manual vía wa.me, no automatizado.</td><td>Bajo</td><td>Meta/Twilio (decisión de costo)</td></tr>
+    <tr><td>PDF</td><td>Solo impresión por navegador.</td><td>Bajo</td><td>Generación server-side si se requiere</td></tr>
+    <tr><td>Gemini</td><td>Depende de la key free tier; sin ella el parseo falla (503).</td><td>Medio</td><td>Monitorear cuota de la API</td></tr>
+    <tr><td>Cron</td><td>Depende de <code>CRON_SECRET</code> y del plan de Vercel.</td><td>Alto si falla</td><td>Verificar ejecución diaria en Vercel</td></tr>
+    <tr><td>Esquema</td><td><code>supabase_schema.sql</code> histórico sin los campos nuevos (la migración manda).</td><td>Bajo</td><td>Actualizar schema base</td></tr>
+  </table>
+
+  <h3 class="sub">Verificación final</h3>
+  <ul class="check">
+    <li>Se revisaron las secciones 1 a 9 y se completó la hoja de hallazgos.</li>
+    <li>Los hallazgos críticos se reportaron y tienen plan de acción.</li>
+    <li>La app queda documentada como operativa (o con seguimiento).</li>
+  </ul>
+
+  <div class="footer-note">
+    KATDOC · Manual de revisión en producción v1.0 · Documento generado el 01-sep-2026 · Para uso interno del equipo.
+  </div>
+</div>
+
+</body>
+</html>
